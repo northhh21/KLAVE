@@ -3289,6 +3289,7 @@ function commissionTier(referralCount){
 // users/m_xxxx; all writes go through /api/managed-profile and /api/manage-beat
 // because the Firestore rules (correctly) only let a user write their own docs.
 window._manageTarget=null; // {id,name} while you're uploading on someone's behalf
+const MANAGED_PRODUCER_SHARE=0.6; // free tier: producer keeps 60%, KLAVE keeps 40%. Change if you move a profile to another tier.
 let _lastClaimLink='';
 
 async function managedApi(path,payload){
@@ -3328,19 +3329,54 @@ async function loadManagedProfiles(){
   const box=document.getElementById('mp-list');
   if(!box) return;
   try{
+    const {getDocs,getDoc,doc,collection,query,where}=await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
     // Scans users client-side like the other admin panels; fine at current scale.
     const snap=await window._getDocs(window._collection(window._db,'users'));
     const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.managed===true&&u.claimed!==true);
     if(!list.length){ box.textContent='No managed profiles yet.'; return; }
-    box.innerHTML=list.map(u=>'<div style="border-top:1px solid var(--grey2);padding:10px 0;">'
-      +'<div style="color:#fff;margin-bottom:6px;">'+escapeHtml(u.displayName||'?')+' <span style="color:var(--muted2);">· '+(u.beatsCount||0)+' beats</span></div>'
+    // Earned = producer's share of completed orders; paid = what you've recorded.
+    await Promise.all(list.map(async u=>{
+      u.earned=0;u.sales=0;u.paid=0;
+      try{
+        const os=await getDocs(query(collection(window._db,'orders'),where('producerId','==',u.id)));
+        os.forEach(o=>{const d=o.data(); if(d.status==='completed'){ u.earned+=(d.amount||0)*MANAGED_PRODUCER_SHARE; u.sales++; }});
+      }catch(e){ console.error(e); }
+      try{
+        const ps=await getDoc(doc(window._db,'users',u.id,'private','payments'));
+        if(ps.exists()) u.paid=ps.data().paidTotal||0;
+      }catch(e){ console.error(e); }
+    }));
+    box.innerHTML=list.map(u=>{
+      const owed=Math.max(0,u.earned-u.paid);
+      return '<div style="border-top:1px solid var(--grey2);padding:10px 0;">'
+      +'<div style="color:#fff;margin-bottom:4px;">'+escapeHtml(u.displayName||'?')+' <span style="color:var(--muted2);">· '+(u.beatsCount||0)+' beats · '+u.sales+' sale'+(u.sales!==1?'s':'')+'</span></div>'
+      +'<div style="margin-bottom:8px;">Earned $'+u.earned.toFixed(2)+' · Paid $'+u.paid.toFixed(2)+' · <span style="color:#fff;">Owed $'+owed.toFixed(2)+'</span></div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button class="rbtn" onclick="startManaging(\''+u.id+'\')">Manage</button>'
       +'<button class="rbtn" onclick="editManagedProfile(\''+u.id+'\')">Edit</button>'
+      +'<button class="rbtn" onclick="recordManagedPayment(\''+u.id+'\')">Record payment</button>'
       +'<button class="rbtn" onclick="newClaimLink(\''+u.id+'\')">New link</button>'
-      +'</div></div>').join('');
+      +'</div></div>';
+    }).join('');
     window._managedCache=list;
   }catch(e){ console.error(e); box.textContent='Couldn\'t load managed profiles.'; }
+}
+
+async function recordManagedPayment(id){
+  const u=(window._managedCache||[]).find(x=>x.id===id);
+  if(!u) return;
+  const owed=Math.max(0,(u.earned||0)-(u.paid||0));
+  const raw=prompt('Amount paid to '+(u.displayName||'?')+' in USD (owed now $'+owed.toFixed(2)+'):');
+  if(raw===null) return;
+  const amount=Number(raw);
+  if(!Number.isFinite(amount)||amount<=0){ toast('Enter a valid amount'); return; }
+  const note=prompt('Note (optional, e.g. bank transfer):')||'';
+  if(!confirm('Record $'+amount.toFixed(2)+' paid to '+(u.displayName||'?')+'?')) return;
+  try{
+    await managedApi('/api/managed-profile',{action:'record-payment',id,amount,note});
+    toast('Payment recorded ✓');
+    loadManagedProfiles();
+  }catch(e){ toast(e.message||'Could not record payment'); }
 }
 
 function startManaging(id){

@@ -1223,7 +1223,7 @@ html:not(.role-artist) .artist-only{display:none !important;}
     </div>
     <div id="mp-bulk" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg3);border:1px solid var(--grey2);border-radius:8px;">
       <div style="font-size:16px;font-weight:800;letter-spacing:1px;margin-bottom:4px;" id="bulk-heading">BULK UPLOAD</div>
-      <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:12px;">// pick many files at once. genre, mood and prices apply to all of them.</div>
+      <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:12px;">// pick many files at once. the genre, mood and prices below apply to every beat, unless you pick a different genre or mood on a row.</div>
       <input type="file" id="bulk-files" accept="audio/*" multiple onchange="onBulkFiles(this)" style="margin-bottom:12px;font-family:var(--M);font-size:11px;color:#fff;width:100%;">
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <select id="bulk-genre" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;"></select>
@@ -3479,7 +3479,7 @@ function closeBulkUpload(){
 }
 function onBulkFiles(inp){
   Array.from(inp.files||[]).forEach(f=>{
-    _bulkItems.push({file:f,title:bulkTitleFromFile(f.name),bpm:'',key:'',status:'ready'});
+    _bulkItems.push({file:f,title:bulkTitleFromFile(f.name),bpm:'',key:'',genre:'',mood:'',status:'ready'});
   });
   inp.value='';
   renderBulkRows();
@@ -3497,6 +3497,10 @@ function renderBulkRows(){
     '<div style="border-top:1px solid var(--grey2);padding:10px 0;">'
     +'<input type="text" value="'+escapeHtml(it.title)+'" maxlength="100" oninput="_bulkItems['+i+'].title=this.value" style="'+inp+'margin-bottom:6px;">'
     +'<div style="display:flex;gap:6px;margin-bottom:6px;">'
+      +'<select onchange="_bulkItems['+i+'].genre=this.value" style="'+inp+'">'+bulkOptions('bulk-genre',it.genre,'Genre: batch default')+'</select>'
+      +'<select onchange="_bulkItems['+i+'].mood=this.value" style="'+inp+'">'+bulkOptions('bulk-mood',it.mood,'Mood: batch default')+'</select>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:6px;">'
       +'<input type="number" placeholder="BPM (optional)" value="'+escapeHtml(String(it.bpm))+'" oninput="_bulkItems['+i+'].bpm=this.value" style="'+inp+'">'
       +'<input type="text" placeholder="Key (optional)" value="'+escapeHtml(it.key)+'" oninput="_bulkItems['+i+'].key=this.value" style="'+inp+'">'
     +'</div>'
@@ -3504,6 +3508,12 @@ function renderBulkRows(){
       +'<span id="bulk-st-'+i+'">'+escapeHtml(bulkStatusText(it))+'</span>'
       +(it.status==='done'?'':'<button class="rbtn" onclick="removeBulkItem('+i+')">Remove</button>')
     +'</div></div>').join('');
+}
+// Options for a per-row dropdown, copied from the batch-wide one, with a
+// leading "use the batch default" choice (empty value).
+function bulkOptions(selectId,current,defaultLabel){
+  const opts=Array.from(document.getElementById(selectId).options).map(o=>'<option value="'+escapeHtml(o.value)+'"'+(o.value===current?' selected':'')+'>'+escapeHtml(o.value)+'</option>');
+  return '<option value=""'+(current?'':' selected')+'>'+escapeHtml(defaultLabel)+'</option>'+opts.join('');
 }
 function bulkStatusText(it){
   return it.status==='done'?'✓ published':it.status==='failed'?('✗ '+(it.error||'failed')+' (tap Publish all to retry)'):it.status==='working'?'uploading…':'ready · '+Math.round(it.file.size/1024/1024*10)/10+' MB';
@@ -3548,7 +3558,7 @@ async function runBulkUpload(){
       const mr=await fetch('/api/upload',{method:'POST',headers:hdr,body:JSON.stringify({
         action:'managed-beat-create',managedId:_bulkTarget.id,
         title:it.title.trim().toUpperCase(),bpm:Number(it.bpm)||0,key:(it.key||'').trim(),
-        genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:price,exclPrice:excl,
+        genre:(it.genre||genre).toLowerCase(),mood:(it.mood||mood).toLowerCase(),price:price,exclPrice:excl,
         audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl:'',duration:cd.duration||0
       })});
       const mj=await mr.json().catch(()=>({}));

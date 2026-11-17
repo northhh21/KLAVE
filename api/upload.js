@@ -19,6 +19,7 @@ import {
   signedFullUrl,
   plainAuthenticatedUrl,
 } from '../lib/cloudinary-sign.js';
+import { handleManaged, isManagedAction } from '../lib/managed.js';
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -145,6 +146,9 @@ export default async function handler(req, res) {
     }
 
     const body = req.body || {};
+    // Managed producer profiles (see lib/managed.js). Routed here so it doesn't
+    // add serverless functions: Hobby plan caps them at 12.
+    if (isManagedAction(body.action)) return await handleManaged({ action: body.action, body, decoded, res, admin });
     if (body.action === 'full') return await handleFull(res, decoded, body, creds);
     if (body.action === 'secure-existing') return await handleSecureExisting(res, decoded, creds);
 

@@ -98,7 +98,23 @@ export default async function handler(req, res) {
     });
 
     // 4) Finish: upgrade the real account, kill the code, remove the shell profile.
+    // Payment history you recorded moves to the producer's own private/payments
+    // doc (owner + admin can read it), so what they've been paid stays visible.
+    const payRef = mRef.collection('private').doc('payments');
+    const paySnap = await payRef.get();
     const fin = db.batch();
+    if (paySnap.exists) {
+      const pd = paySnap.data();
+      fin.set(
+        db.collection('users').doc(uid).collection('private').doc('payments'),
+        {
+          paidTotal: FieldValue.increment(pd.paidTotal || 0),
+          ...((pd.entries || []).length ? { entries: FieldValue.arrayUnion(...pd.entries) } : {}),
+        },
+        { merge: true }
+      );
+      fin.delete(payRef);
+    }
     fin.set(
       db.collection('users').doc(uid),
       {

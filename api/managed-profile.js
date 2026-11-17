@@ -10,6 +10,8 @@
 //   { action:'create', displayName, bio?, photoURL? } -> { id, code }
 //   { action:'update', id, displayName?, bio?, photoURL? }
 //   { action:'new-code', id }                         -> { id, code }
+//   { action:'record-payment', id, amount, note? }    amount in USD; kept in
+//       users/m_xxxx/private/payments (admin-readable) and carried over on claim
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -138,6 +140,24 @@ export default async function handler(req, res) {
         createdAt: FieldValue.serverTimestamp(),
       });
       return res.status(200).json({ id: snap.id, code });
+    }
+
+    if (body.action === 'record-payment') {
+      const snap = await getManaged(body.id);
+      if (!snap) return res.status(404).json({ error: 'Managed profile not found (or already claimed)' });
+      const amount = Math.round(Number(body.amount) * 100) / 100;
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+        return res.status(400).json({ error: 'Enter a valid amount in USD' });
+      }
+      const note = String(body.note || '').trim().slice(0, 100);
+      await snap.ref.collection('private').doc('payments').set(
+        {
+          paidTotal: FieldValue.increment(amount),
+          entries: FieldValue.arrayUnion({ amount, note, at: new Date().toISOString() }),
+        },
+        { merge: true }
+      );
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(400).json({ error: 'Unknown action' });

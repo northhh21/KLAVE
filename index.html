@@ -1221,6 +1221,24 @@ html:not(.role-artist) .artist-only{display:none !important;}
       <div id="mp-link-text" style="font-family:var(--M);font-size:11px;word-break:break-all;margin-bottom:8px;"></div>
       <button class="rbtn" onclick="copyClaimLink()">Copy link</button>
     </div>
+    <div id="mp-bulk" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg3);border:1px solid var(--grey2);border-radius:8px;">
+      <div style="font-size:16px;font-weight:800;letter-spacing:1px;margin-bottom:4px;" id="bulk-heading">BULK UPLOAD</div>
+      <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:12px;">// pick many files at once. genre, mood and prices apply to all of them.</div>
+      <input type="file" id="bulk-files" accept="audio/*" multiple onchange="onBulkFiles(this)" style="margin-bottom:12px;font-family:var(--M);font-size:11px;color:#fff;width:100%;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <select id="bulk-genre" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;"></select>
+        <select id="bulk-mood" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;"></select>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="number" id="bulk-price" placeholder="Basic $" value="25" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;">
+        <input type="number" id="bulk-excl" placeholder="Exclusive $ (optional)" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;">
+      </div>
+      <div id="bulk-rows" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="pub-btn" id="bulk-go" style="margin:0;" onclick="runBulkUpload()">PUBLISH ALL</button>
+        <button class="rbtn" id="bulk-close" onclick="closeBulkUpload()">Close</button>
+      </div>
+    </div>
     <div id="mp-list" style="font-family:var(--M);font-size:11px;color:var(--muted2);">Loading…</div>
   </div>
 </div>
@@ -2060,7 +2078,7 @@ function renderHome(){
   const top=list[0];
   document.getElementById('featured-tag').textContent='// TRENDING NOW';
   document.getElementById('featured-title').innerHTML=escapeHtml(top.title).replace(' ','<br>');
-  document.getElementById('featured-sub').textContent='prod. '+top.prod+' • '+(top.genre||'').toUpperCase()+' • '+(top.bpm||'')+' BPM';
+  document.getElementById('featured-sub').textContent='prod. '+top.prod+' • '+(top.genre||'').toUpperCase()+(top.bpm?' • '+top.bpm+' BPM':'');
   if(document.getElementById('featured-play')) document.getElementById('featured-play').style.display='flex';
 
   renderBeatCards(list);
@@ -3354,6 +3372,7 @@ async function loadManagedProfiles(){
       +'<div style="margin-bottom:8px;">Earned $'+u.earned.toFixed(2)+' · Paid $'+u.paid.toFixed(2)+' · <span style="color:#fff;">Owed $'+owed.toFixed(2)+'</span></div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button class="rbtn" onclick="startManaging(\''+u.id+'\')">Manage</button>'
+      +'<button class="rbtn" onclick="openBulkUpload(\''+u.id+'\')">Bulk upload</button>'
       +'<button class="rbtn" onclick="editManagedProfile(\''+u.id+'\')">Edit</button>'
       +'<button class="rbtn" onclick="recordManagedPayment(\''+u.id+'\')">Record payment</button>'
       +'<button class="rbtn" onclick="newClaimLink(\''+u.id+'\')">New link</button>'
@@ -3426,6 +3445,126 @@ async function newClaimLink(id){
     showClaimLink(r.id,r.code);
     toast('New link ready ✓');
   }catch(e){ toast(e.message||'Could not make link'); }
+}
+
+
+// ── BULK UPLOAD FOR A MANAGED PROFILE ──
+// Pick many audio files, set genre/mood/prices once, tweak titles (and optional
+// BPM/key) per file, then publish them one after another. Each file takes the
+// same route as a single upload: signed Cloudinary upload, then
+// /api/upload (managed-beat-create) writes the beat on the managed profile.
+let _bulkTarget=null,_bulkItems=[],_bulkRunning=false;
+
+function bulkTitleFromFile(name){
+  return name.replace(/\.[^/.]+$/,'').replace(/[_\-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase().slice(0,100);
+}
+function openBulkUpload(id){
+  const u=(window._managedCache||[]).find(x=>x.id===id);
+  if(!u) return;
+  _bulkTarget={id,name:u.displayName||'?'};
+  _bulkItems=[];
+  document.getElementById('bulk-heading').textContent='BULK UPLOAD · '+_bulkTarget.name;
+  document.getElementById('bulk-genre').innerHTML=document.getElementById('up-genre').innerHTML;
+  document.getElementById('bulk-mood').innerHTML=document.getElementById('up-mood').innerHTML;
+  document.getElementById('bulk-files').value='';
+  renderBulkRows();
+  const box=document.getElementById('mp-bulk');
+  box.style.display='block';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeBulkUpload(){
+  if(_bulkRunning){ toast('Wait for the uploads to finish'); return; }
+  _bulkTarget=null;_bulkItems=[];
+  document.getElementById('mp-bulk').style.display='none';
+}
+function onBulkFiles(inp){
+  Array.from(inp.files||[]).forEach(f=>{
+    _bulkItems.push({file:f,title:bulkTitleFromFile(f.name),bpm:'',key:'',status:'ready'});
+  });
+  inp.value='';
+  renderBulkRows();
+}
+function removeBulkItem(i){
+  if(_bulkRunning) return;
+  _bulkItems.splice(i,1);
+  renderBulkRows();
+}
+function renderBulkRows(){
+  const box=document.getElementById('bulk-rows');
+  if(!_bulkItems.length){ box.innerHTML='<div style="font-family:var(--M);font-size:11px;color:var(--muted2);">No files yet.</div>'; return; }
+  const inp='width:100%;padding:8px;background:var(--bg);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:11px;border-radius:6px;box-sizing:border-box;';
+  box.innerHTML=_bulkItems.map((it,i)=>
+    '<div style="border-top:1px solid var(--grey2);padding:10px 0;">'
+    +'<input type="text" value="'+escapeHtml(it.title)+'" maxlength="100" oninput="_bulkItems['+i+'].title=this.value" style="'+inp+'margin-bottom:6px;">'
+    +'<div style="display:flex;gap:6px;margin-bottom:6px;">'
+      +'<input type="number" placeholder="BPM (optional)" value="'+escapeHtml(String(it.bpm))+'" oninput="_bulkItems['+i+'].bpm=this.value" style="'+inp+'">'
+      +'<input type="text" placeholder="Key (optional)" value="'+escapeHtml(it.key)+'" oninput="_bulkItems['+i+'].key=this.value" style="'+inp+'">'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--M);font-size:10px;color:var(--muted2);">'
+      +'<span id="bulk-st-'+i+'">'+escapeHtml(bulkStatusText(it))+'</span>'
+      +(it.status==='done'?'':'<button class="rbtn" onclick="removeBulkItem('+i+')">Remove</button>')
+    +'</div></div>').join('');
+}
+function bulkStatusText(it){
+  return it.status==='done'?'✓ published':it.status==='failed'?('✗ '+(it.error||'failed')+' (tap Publish all to retry)'):it.status==='working'?'uploading…':'ready · '+Math.round(it.file.size/1024/1024*10)/10+' MB';
+}
+function setBulkStatus(i){
+  const el=document.getElementById('bulk-st-'+i);
+  if(el) el.textContent=bulkStatusText(_bulkItems[i]);
+}
+
+async function runBulkUpload(){
+  if(_bulkRunning||!_bulkTarget) return;
+  const todo=_bulkItems.map((it,i)=>({it,i})).filter(x=>x.it.status!=='done');
+  if(!todo.length){ toast('Add some files first'); return; }
+  const genre=document.getElementById('bulk-genre').value;
+  const mood=document.getElementById('bulk-mood').value;
+  const price=Number(document.getElementById('bulk-price').value);
+  const exclRaw=document.getElementById('bulk-excl').value.trim();
+  const excl=exclRaw?Number(exclRaw):0;
+  // Friendly pre-check only; /api/upload (lib/managed.js) and the rules enforce it.
+  if(!Number.isFinite(price)||price<5){ toast('Minimum price is $5'); return; }
+  if(exclRaw&&(!Number.isFinite(excl)||excl<25)){ toast('Minimum exclusive price is $25'); return; }
+  if(todo.some(x=>!(x.it.title||'').trim())){ toast('Every beat needs a title'); return; }
+
+  _bulkRunning=true;
+  const go=document.getElementById('bulk-go');
+  go.disabled=true;
+  let ok=0,fail=0;
+  for(const {it,i} of todo){
+    it.status='working';it.error='';setBulkStatus(i);
+    go.textContent='UPLOADING '+(ok+fail+1)+' / '+todo.length+'…';
+    try{
+      const tok=await window._auth.currentUser.getIdToken(true);
+      const hdr={'Content-Type':'application/json',Authorization:'Bearer '+tok};
+      const sign=await (await fetch('/api/upload',{method:'POST',headers:hdr,body:JSON.stringify({fileName:it.file.name})})).json();
+      if(sign.error) throw new Error(sign.error);
+      const fd=new FormData();
+      fd.append('file',it.file);fd.append('api_key',sign.apiKey);fd.append('timestamp',sign.timestamp);
+      fd.append('signature',sign.signature);fd.append('public_id',sign.publicId);fd.append('upload_preset',sign.uploadPreset);
+      if(sign.type) fd.append('type',sign.type);
+      const cd=await (await fetch('https://api.cloudinary.com/v1_1/'+sign.cloudName+'/auto/upload',{method:'POST',body:fd})).json();
+      if(cd.error||!cd.secure_url) throw new Error((cd.error&&cd.error.message)||'Audio upload failed');
+      const mr=await fetch('/api/upload',{method:'POST',headers:hdr,body:JSON.stringify({
+        action:'managed-beat-create',managedId:_bulkTarget.id,
+        title:it.title.trim().toUpperCase(),bpm:Number(it.bpm)||0,key:(it.key||'').trim(),
+        genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:price,exclPrice:excl,
+        audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl:'',duration:cd.duration||0
+      })});
+      const mj=await mr.json().catch(()=>({}));
+      if(!mr.ok) throw new Error(mj.error||'Could not save beat');
+      it.status='done';ok++;
+    }catch(e){
+      console.error(e);
+      it.status='failed';it.error=(e&&e.message)?e.message:'failed';fail++;
+    }
+    setBulkStatus(i);
+  }
+  _bulkRunning=false;
+  go.disabled=false;go.textContent='PUBLISH ALL';
+  toast(ok+' published'+(fail?' · '+fail+' failed':''));
+  try{ if(typeof window._loadBeats==='function') await window._loadBeats(); }catch(e){}
+  loadManagedProfiles();
 }
 
 // ── CLAIM A MANAGED PROFILE (producer) ──

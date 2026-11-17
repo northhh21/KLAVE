@@ -3167,7 +3167,7 @@ async function publishBeat(){
     // to independently satisfy their own rules (validBeat/withinFreeTierLimits
     // on the beat, the narrow +1-only rule on beatsCount).
     if(window._manageTarget){
-      const mr=await fetch('/api/manage-beat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+_idToken},body:JSON.stringify({action:'create',managedId:window._manageTarget.id,title:title.toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl,duration:cd.duration||0})});
+      const mr=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+_idToken},body:JSON.stringify({action:'managed-beat-create',managedId:window._manageTarget.id,title:title.toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl,duration:cd.duration||0})});
       const mj=await mr.json().catch(()=>({}));
       if(!mr.ok) throw new Error(mj.error||'Could not save beat for managed profile');
     } else {
@@ -3286,7 +3286,7 @@ function commissionTier(referralCount){
 
 // ── MANAGED PROFILES (admin) ──
 // Profiles you run for producers who haven't signed up. They live in
-// users/m_xxxx; all writes go through /api/managed-profile and /api/manage-beat
+// users/m_xxxx; all writes go through /api/upload (managed-* actions, see lib/managed.js)
 // because the Firestore rules (correctly) only let a user write their own docs.
 window._manageTarget=null; // {id,name} while you're uploading on someone's behalf
 const MANAGED_PRODUCER_SHARE=0.6; // free tier: producer keeps 60%, KLAVE keeps 40%. Change if you move a profile to another tier.
@@ -3294,7 +3294,8 @@ let _lastClaimLink='';
 
 async function managedApi(path,payload){
   const tok=await window._auth.currentUser.getIdToken();
-  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify(payload)});
+  // Everything goes through /api/upload (action 'managed-...') so the project stays under Vercel Hobby's 12-function cap.
+  const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({...payload,action:'managed-'+payload.action})});
   const j=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(j.error||'Request failed');
   return j;
@@ -3317,7 +3318,7 @@ async function createManagedProfile(){
   const bio=document.getElementById('mp-bio').value.trim();
   if(!name){toast('Enter a name');return;}
   try{
-    const r=await managedApi('/api/managed-profile',{action:'create',displayName:name,bio});
+    const r=await managedApi('/api/upload',{action:'create',displayName:name,bio});
     document.getElementById('mp-name').value='';document.getElementById('mp-bio').value='';
     showClaimLink(r.id,r.code);
     toast('Profile created ✓');
@@ -3373,7 +3374,7 @@ async function recordManagedPayment(id){
   const note=prompt('Note (optional, e.g. bank transfer):')||'';
   if(!confirm('Record $'+amount.toFixed(2)+' paid to '+(u.displayName||'?')+'?')) return;
   try{
-    await managedApi('/api/managed-profile',{action:'record-payment',id,amount,note});
+    await managedApi('/api/upload',{action:'record-payment',id,amount,note});
     toast('Payment recorded ✓');
     loadManagedProfiles();
   }catch(e){ toast(e.message||'Could not record payment'); }
@@ -3411,7 +3412,7 @@ async function editManagedProfile(id){
   const bio=prompt('Bio (max 300):',u.bio||'');
   if(bio===null) return;
   try{
-    await managedApi('/api/managed-profile',{action:'update',id,displayName:name,bio});
+    await managedApi('/api/upload',{action:'update',id,displayName:name,bio});
     toast('Updated ✓');
     if(typeof window._loadBeats==='function') await window._loadBeats();
     loadManagedProfiles();
@@ -3421,7 +3422,7 @@ async function editManagedProfile(id){
 async function newClaimLink(id){
   if(!confirm('Make a new claim link? The old one stops working.')) return;
   try{
-    const r=await managedApi('/api/managed-profile',{action:'new-code',id});
+    const r=await managedApi('/api/upload',{action:'new-code',id});
     showClaimLink(r.id,r.code);
     toast('New link ready ✓');
   }catch(e){ toast(e.message||'Could not make link'); }
@@ -3437,7 +3438,7 @@ async function claimPendingProfileIfAny(user){
   if(!pending||!pending.id||!pending.code||!user||!user.emailVerified) return;
   try{
     const tok=await user.getIdToken(true);
-    const r=await fetch('/api/claim-profile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify(pending)});
+    const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({action:'managed-claim',id:pending.id,code:pending.code})});
     const j=await r.json().catch(()=>({}));
     if(r.ok&&j.claimed){
       localStorage.removeItem('klave_pending_claim');

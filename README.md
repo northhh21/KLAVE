@@ -25,10 +25,8 @@ Currently in active development. Core marketplace, auth, and NERO are functional
 - **4 producer payout tiers**:
   | Tier | Royalty rate |
   |---|---|
-  | Free | 19% |
-  | $7/month | 10% |
-  | $25/month | 5% |
-  | $299 lifetime | 0% |
+  | Free | 40% |
+  | $15/month | 25% |
 - **Human-made verification** — stem-upload flow + NERO voice guidance to confirm original work
 - **Google Sign-In + email/password auth** with email verification
 - **Report system** for flagging stolen/infringing content

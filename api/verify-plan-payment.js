@@ -1,11 +1,12 @@
 // api/verify-plan-payment.js — verifies a Paystack transaction for a plan
-// upgrade (pro7 / pro25), then writes the new tier onto the
+// upgrade (pro15, plus legacy pro7 / pro25), then writes the new tier onto the
 // user's Firestore doc via the Admin SDK.
 //
 // Changes in this version:
 //  - Checks WHAT was paid, not just that something was paid:
-//      pro7 / pro25  -> must be on the matching Paystack plan code
-//                       (env PAYSTACK_PLAN_PRO7 / PAYSTACK_PLAN_PRO25).
+//      pro15 (current) and legacy pro7 / pro25 -> must be on the matching
+//                       Paystack plan code (env PAYSTACK_PLAN_PRO15 /
+//                       PAYSTACK_PLAN_PRO7 / PAYSTACK_PLAN_PRO25).
 //                       If those env vars aren't set yet, falls back to an
 //                       amount check against the live USD->NGN rate.
 //  - Rejects currencies other than NGN/USD.
@@ -25,7 +26,12 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-const PLAN_USD = { pro7: 7, pro25: 25 };
+const PLAN_USD = { pro15: 15, pro7: 7, pro25: 25 };
+const PLAN_ENV = {
+  pro15: 'PAYSTACK_PLAN_PRO15',
+  pro7: 'PAYSTACK_PLAN_PRO7',
+  pro25: 'PAYSTACK_PLAN_PRO25',
+};
 
 async function getUsdToNgnRate() {
   const res = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -90,7 +96,7 @@ export default async function handler(req, res) {
     const currency = d.currency;
     const amountMajor = d.amount / 100;
 
-    const expectedPlan = tier === 'pro7' ? process.env.PAYSTACK_PLAN_PRO7 : process.env.PAYSTACK_PLAN_PRO25;
+    const expectedPlan = process.env[PLAN_ENV[tier]];
     const paidPlan =
       (typeof d.plan === 'string' ? d.plan : d.plan?.plan_code) || d.plan_object?.plan_code || null;
 

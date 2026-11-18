@@ -1,8 +1,10 @@
 // api/create-plans.js — ONE-TIME SETUP endpoint. Call this once (e.g. via
-// curl or Postman, signed in as the admin account) to create the $7/mo and
-// $25/mo recurring plans on Paystack. It prints back plan_code values —
-// paste those into PAYSTACK_PLAN_CODE_PRO7 / PAYSTACK_PLAN_CODE_PRO25 in
-// the frontend, then this endpoint is never needed again.
+// curl or Postman, signed in as the admin account) to create the $15/mo
+// recurring Pro plan on Paystack. It prints back the plan_code — paste it
+// into PAYSTACK_PLAN_CODE_PRO15 in the frontend (and set the env var
+// PAYSTACK_PLAN_PRO15 on Vercel to the same value), then this endpoint is
+// never needed again. The old $7 / $25 plans already exist and are NOT
+// recreated here, so running this will not duplicate them.
 //
 // IMPORTANT — exchange rate caveat: Paystack plans bill a FIXED NGN amount
 // on every renewal. This converts $7/$25 to NGN once, at creation time,
@@ -69,15 +71,13 @@ export default async function handler(req, res) {
       return data.data.plan_code;
     }
 
-    const pro7Code = await createPlan('KLAVE Pro ($7/mo)', 7);
-    const pro25Code = await createPlan('KLAVE Pro+ ($25/mo)', 25);
+    const pro15Code = await createPlan('KLAVE Pro ($15/mo)', 15);
 
     return res.status(200).json({
       success: true,
       rateUsed: rate,
-      pro7: pro7Code,
-      pro25: pro25Code,
-      note: 'Paste these plan_code values into PAYSTACK_PLAN_CODE_PRO7 / PAYSTACK_PLAN_CODE_PRO25 in the frontend.',
+      pro15: pro15Code,
+      note: 'Paste this plan_code into PAYSTACK_PLAN_CODE_PRO15 in the frontend and set env var PAYSTACK_PLAN_PRO15 on Vercel to the same value.',
     });
   } catch (e) {
     console.error('Plan creation error:', e);

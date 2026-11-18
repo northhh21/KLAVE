@@ -115,7 +115,7 @@
     try{
       const snap = await getDocs(collection(db,'beats'));
       if(!snap.empty){
-        window._firestoreBeats = snap.docs.map(d=>({id:d.id,...d.data()}));
+        window._firestoreBeats = snap.docs.map(d=>{const o={id:d.id,...d.data()}; if(typeof o.title==='string'){const c=o.title.replace(/^\s*\d+\.(?!\d)\s*/,'').trim(); if(c) o.title=c;} return o;});
         if(typeof renderHome === 'function') renderHome();
         if(typeof renderSearch === 'function') renderSearch();
       }
@@ -426,6 +426,10 @@ body::before{
 .search-box input{flex:1;background:transparent;border:none;outline:none;font-family:var(--H);font-size:14px;color:var(--white);}
 .search-box input::placeholder{color:var(--muted);}
 .search-icon{color:var(--muted);font-size:16px;}
+.hm-strip{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 12px;border:1px solid rgba(18,70,245,.35);background:rgba(18,70,245,.08);border-radius:10px;}
+.hm-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blueglow);flex:none;}
+.hm-strip b{display:block;font-size:12px;font-weight:800;letter-spacing:1.5px;color:var(--white);}
+.hm-strip span{display:block;font-family:var(--M);font-size:9px;letter-spacing:.5px;color:var(--muted2);margin-top:2px;line-height:1.5;}
 .genre-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
 .genre-card{padding:20px 16px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s;}
 .genre-card:active{transform:scale(.97);}
@@ -1029,6 +1033,7 @@ html:not(.role-artist) .artist-only{display:none !important;}
   <!-- HOME -->
   <div class="screen active" id="s-home">
     <div class="home-wrap">
+      <div class="hm-strip"><div class="hm-dot"></div><div><b>100% HUMAN-MADE BEATS</b><span>Every producer is verified by stem upload. No AI-generated tracks.</span></div></div>
       <div class="featured" id="featured-card">
         <div class="featured-loading glitch-t" data-text="LOADING BEATS">LOADING BEATS</div>
         <div class="featured-tag" id="featured-tag">// KLAVE</div>
@@ -1587,25 +1592,18 @@ html:not(.role-artist) .artist-only{display:none !important;}
       <div class="plan-card" id="plan-card-free" data-tier="free">
         <div class="plan-card-name">FREE</div>
         <div class="plan-card-price">$0</div>
-        <div class="plan-card-detail">40% royalties · up to 3 beats · no exclusive-rights pricing</div>
+        <div class="plan-card-detail">KLAVE fee 40% (you keep 60%) · up to 3 beats · no exclusive-rights pricing</div>
         <div class="plan-card-btn plan-card-btn-current" id="plan-btn-free">SELECTED</div>
       </div>
 
-      <div class="plan-card" id="plan-card-pro7" data-tier="pro7">
+      <div class="plan-card" id="plan-card-pro15" data-tier="pro15">
         <div class="plan-card-name">PRO</div>
-        <div class="plan-card-price">$7<span>/month</span></div>
-        <div class="plan-card-detail">30% royalties · unlimited beats · exclusive-rights pricing unlocked</div>
-        <button class="plan-card-btn plan-card-btn-active" id="plan-btn-pro7" onclick="selectPlan('pro7')">UPGRADE</button>
+        <div class="plan-card-price">$15<span>/month</span></div>
+        <div class="plan-card-detail">KLAVE fee 25% (you keep 75%) · unlimited beats · exclusive-rights pricing unlocked</div>
+        <button class="plan-card-btn plan-card-btn-current" id="plan-btn-pro15" onclick="selectPlan('pro15')">COMING SOON</button>
       </div>
 
-      <div class="plan-card" id="plan-card-pro25" data-tier="pro25">
-        <div class="plan-card-name">PRO+</div>
-        <div class="plan-card-price">$25<span>/month</span></div>
-        <div class="plan-card-detail">19% royalties · unlimited beats · exclusive-rights pricing unlocked</div>
-        <button class="plan-card-btn plan-card-btn-active" id="plan-btn-pro25" onclick="selectPlan('pro25')">UPGRADE</button>
-      </div>
-
-      <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:.5px;margin-top:8px;line-height:1.6;">Monthly plans renew automatically via Paystack. You can cancel anytime from this screen — access continues until the end of the paid period.</div>
+      <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:.5px;margin-top:8px;line-height:1.6;">Pro renews monthly via Paystack. You can cancel anytime from this screen — access continues until the end of the paid period.</div>
     </div>
   </div>
 
@@ -1974,6 +1972,8 @@ let _selectedMood=null;
 
 // ── RENDER ──
 function getBeats(){ return window._firestoreBeats||localBeats; }
+// Drops a leading list number like "3. " from a beat title (display + save).
+function cleanBeatTitle(t){ const c=String(t==null?'':t).replace(/^\s*\d+\.(?!\d)\s*/,'').trim(); return c||String(t==null?'':t).trim(); }
 // Escapes user-supplied text before it goes into innerHTML. Beat titles,
 // producer names, etc. are attacker-controllable strings — without this,
 // a title like <img src=x onerror=...> executes in every visitor's browser.
@@ -1990,11 +1990,16 @@ function makeWaveBars(n){
   return out;
 }
 
+function genresWithBeats(){
+  const bs=getBeats();
+  return genres.filter(g=>bs.some(b=>(b.genre||'').toLowerCase()===g.name.toLowerCase()));
+}
+
 function renderHomeChips(){
   const hc=document.getElementById('home-chips');
   if(!hc) return;
   hc.innerHTML='';
-  const all=[{name:'All'}].concat(genres);
+  const all=[{name:'All'}].concat(genresWithBeats());
   all.forEach((g,i)=>{
     const d=document.createElement('div');
     d.className='home-chip'+(i===0?' on':'');
@@ -2118,7 +2123,7 @@ function renderSearch(list){
   });
   const gg=document.getElementById('genre-grid');
   gg.innerHTML='';
-  genres.forEach(g=>{
+  genresWithBeats().forEach(g=>{
     const d=document.createElement('div');
     d.className='genre-card';
     d.innerHTML=`<div class="genre-bg" style="background:${g.color}"></div><div class="genre-name">${g.name}</div><div class="genre-count">${getBeats().filter(b=>(b.genre||'').toLowerCase()===g.name.toLowerCase()).length} beats</div>`;
@@ -2298,7 +2303,7 @@ function loadAnalyticsProducer(){
         } else {
           mine.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
           listEl.innerHTML=mine.map((b,i)=>
-            '<div class="an-beat-row"><div class="an-rank">'+String(i+1).padStart(2,'0')+'</div><div class="an-thumb">'+escapeHtml((b.title||'?')[0])+'</div><div class="an-info"><div class="an-beat-title">'+escapeHtml(b.title||'')+'</div><div class="an-beat-sub">'+escapeHtml(b.genre||'')+' · '+formatKlavePrice(b.price||0)+'</div></div><div class="an-plays">'+(b.plays||0)+' plays</div></div>'
+            '<div class="an-beat-row"><div class="an-rank">'+String(i+1).padStart(2,'0')+'</div><div class="an-thumb">'+escapeHtml((cleanBeatTitle(b.title||'?')||'?')[0])+'</div><div class="an-info"><div class="an-beat-title">'+escapeHtml(cleanBeatTitle(b.title||''))+'</div><div class="an-beat-sub">'+escapeHtml(b.genre||'')+' · '+formatKlavePrice(b.price||0)+'</div></div><div class="an-plays">'+(b.plays||0)+' plays</div></div>'
           ).join('');
         }
       }
@@ -2343,7 +2348,7 @@ function loadAnalyticsAdmin(){
       } else {
         const recent=[...beats].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5);
         recentEl.innerHTML=recent.map((b,i)=>
-          '<div class="an-beat-row"><div class="an-rank">'+String(i+1).padStart(2,'0')+'</div><div class="an-thumb">'+escapeHtml((b.title||'?')[0])+'</div><div class="an-info"><div class="an-beat-title">'+escapeHtml(b.title||'')+'</div><div class="an-beat-sub">'+escapeHtml(b.prod||'')+'</div></div><div class="an-plays">'+(b.plays||0)+' plays</div></div>'
+          '<div class="an-beat-row"><div class="an-rank">'+String(i+1).padStart(2,'0')+'</div><div class="an-thumb">'+escapeHtml((cleanBeatTitle(b.title||'?')||'?')[0])+'</div><div class="an-info"><div class="an-beat-title">'+escapeHtml(cleanBeatTitle(b.title||''))+'</div><div class="an-beat-sub">'+escapeHtml(b.prod||'')+'</div></div><div class="an-plays">'+(b.plays||0)+' plays</div></div>'
         ).join('');
       }
     }
@@ -3185,14 +3190,14 @@ async function publishBeat(){
     // to independently satisfy their own rules (validBeat/withinFreeTierLimits
     // on the beat, the narrow +1-only rule on beatsCount).
     if(window._manageTarget){
-      const mr=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+_idToken},body:JSON.stringify({action:'managed-beat-create',managedId:window._manageTarget.id,title:title.toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl,duration:cd.duration||0})});
+      const mr=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+_idToken},body:JSON.stringify({action:'managed-beat-create',managedId:window._manageTarget.id,title:cleanBeatTitle(title).toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl,duration:cd.duration||0})});
       const mj=await mr.json().catch(()=>({}));
       if(!mr.ok) throw new Error(mj.error||'Could not save beat for managed profile');
     } else {
     const {writeBatch,doc,increment}=await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
     const newBeatRef=doc(window._collection(window._db,'beats'));
     const batch=writeBatch(window._db);
-    batch.set(newBeatRef,{title:title.toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,prod:window._currentDisplayName||window._currentUser.email.split('@')[0],producerId:window._currentUser.uid,producerTier:_tier,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),...(sign.previewUrl?{previewUrl:sign.previewUrl}:{}),...(coverUrl?{coverUrl}:{}),duration:cd.duration||0,createdAt:window._ts(),plays:0});
+    batch.set(newBeatRef,{title:cleanBeatTitle(title).toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,prod:window._currentDisplayName||window._currentUser.email.split('@')[0],producerId:window._currentUser.uid,producerTier:_tier,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),...(sign.previewUrl?{previewUrl:sign.previewUrl}:{}),...(coverUrl?{coverUrl}:{}),duration:cd.duration||0,createdAt:window._ts(),plays:0});
     batch.update(doc(window._db,'users',window._currentUser.uid),{beatsCount:increment(1)});
     await batch.commit();
     }
@@ -3456,7 +3461,7 @@ async function newClaimLink(id){
 let _bulkTarget=null,_bulkItems=[],_bulkRunning=false;
 
 function bulkTitleFromFile(name){
-  return name.replace(/\.[^/.]+$/,'').replace(/[_\-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase().slice(0,100);
+  return cleanBeatTitle(name.replace(/\.[^/.]+$/,'').replace(/[_\-]+/g,' ').replace(/\s+/g,' ').trim()).toUpperCase().slice(0,100);
 }
 function openBulkUpload(id){
   const u=(window._managedCache||[]).find(x=>x.id===id);
@@ -3557,7 +3562,7 @@ async function runBulkUpload(){
       if(cd.error||!cd.secure_url) throw new Error((cd.error&&cd.error.message)||'Audio upload failed');
       const mr=await fetch('/api/upload',{method:'POST',headers:hdr,body:JSON.stringify({
         action:'managed-beat-create',managedId:_bulkTarget.id,
-        title:it.title.trim().toUpperCase(),bpm:Number(it.bpm)||0,key:(it.key||'').trim(),
+        title:cleanBeatTitle(it.title).toUpperCase(),bpm:Number(it.bpm)||0,key:(it.key||'').trim(),
         genre:(it.genre||genre).toLowerCase(),mood:(it.mood||mood).toLowerCase(),price:price,exclPrice:excl,
         audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),previewUrl:sign.previewUrl||'',coverUrl:'',duration:cd.duration||0
       })});
@@ -3980,16 +3985,20 @@ async function verifyKlavePayment(reference){
 // error instead of opening a broken checkout.
 const PAYSTACK_PLAN_CODE_PRO7 = 'PLN_xmwbhnqhh2zc080';
 const PAYSTACK_PLAN_CODE_PRO25 = 'PLN_1bdx8i1kkxopbg0';
+// $15/mo Pro plan. Run /api/create-plans once, paste the returned pro15 code here.
+// While this is empty the Pro card shows COMING SOON (admin can still test it).
+const PAYSTACK_PLAN_CODE_PRO15 = '';
 
 const PLAN_INFO = {
   free:{label:'Free plan'},
+  pro15:{label:'Pro plan — $15/mo',code:PAYSTACK_PLAN_CODE_PRO15,recurring:true},
   pro7:{label:'Pro plan — $7/mo',code:PAYSTACK_PLAN_CODE_PRO7,recurring:true},
   pro25:{label:'Pro+ plan — $25/mo',code:PAYSTACK_PLAN_CODE_PRO25,recurring:true}
 };
 
 function loadPlansScreen(){
   const current=window._myTier||'free';
-  ['free','pro7','pro25'].forEach(t=>{
+  ['free','pro15','pro7','pro25'].forEach(t=>{
     const card=document.getElementById('plan-card-'+t);
     const btn=document.getElementById('plan-btn-'+t);
     if(!card||!btn) return;
@@ -4005,9 +4014,15 @@ function loadPlansScreen(){
         btn.onclick=()=>cancelPlan();
       }
     } else if(t!=='free'){
-      btn.className='plan-card-btn plan-card-btn-active';
-      btn.textContent='UPGRADE';
-      btn.onclick=()=>selectPlan(t);
+      if(PLAN_INFO[t].recurring && !PLAN_INFO[t].code && !isAdmin()){
+        btn.className='plan-card-btn plan-card-btn-current';
+        btn.textContent='COMING SOON';
+        btn.onclick=null;
+      } else {
+        btn.className='plan-card-btn plan-card-btn-active';
+        btn.textContent='UPGRADE';
+        btn.onclick=()=>selectPlan(t);
+      }
     }
   });
 }
@@ -4311,7 +4326,7 @@ function loadProfile(){
           // the Manage Plan settings row label.
           window._myTier=data.tier||'free';
           window._mySubCode=data.subscriptionCode||null;
-          const tierLabel={free:'Free plan',pro7:'Pro plan — $7/mo',pro25:'Pro+ plan — $25/mo'}[window._myTier]||'Free plan';
+          const tierLabel={free:'Free plan',pro15:'Pro plan — $15/mo',pro7:'Pro plan — $7/mo',pro25:'Pro+ plan — $25/mo'}[window._myTier]||'Free plan';
           const tierEl=document.getElementById('settings-current-tier');
           if(tierEl) tierEl.textContent=tierLabel;
         } else {

@@ -1274,6 +1274,17 @@ html:not(.role-artist) .artist-only{display:none !important;}
   </div>
 </div>
 
+<div class="settings-section" id="admin-producers-panel" style="display:none;">
+  <div class="analytics-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div style="font-size:22px;font-weight:800;letter-spacing:1px;">PRODUCERS</div>
+      <div id="ap-count" style="font-family:var(--M);font-size:11px;color:var(--blue2);">—</div>
+    </div>
+    <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:2px;margin-bottom:16px;">// producers who signed up. updates live.</div>
+    <div id="ap-list" style="font-family:var(--M);font-size:11px;color:var(--muted2);">Loading…</div>
+  </div>
+</div>
+
 <div class="settings-section" id="admin-referral-panel" style="display:none;">
   <div class="analytics-wrap">
     <div style="font-size:22px;font-weight:800;letter-spacing:1px;margin-bottom:4px;">AMBASSADORS</div>
@@ -2546,6 +2557,8 @@ function applyAdminMode(){
   if(roleTool) roleTool.style.display='block';
   const managedTool=document.getElementById('admin-managed-tool');
   if(managedTool){ managedTool.style.display='block'; loadManagedProfiles(); }
+  const producersPanel=document.getElementById('admin-producers-panel');
+  if(producersPanel){ producersPanel.style.display='block'; startLiveProducers(); }
   const referralPanel=document.getElementById('admin-referral-panel');
   if(referralPanel){ referralPanel.style.display='block'; loadReferralAdminPanel(); }
   // Reveal the PLATFORM/MY STATS toggle inside Profile > Analytics for admin only
@@ -2568,6 +2581,46 @@ function removeAdminMode(){
   if(managedTool) managedTool.style.display='none';
   const referralPanel=document.getElementById('admin-referral-panel');
   if(referralPanel) referralPanel.style.display='none';
+  const producersPanel=document.getElementById('admin-producers-panel');
+  if(producersPanel) producersPanel.style.display='none';
+  stopLiveProducers();
+}
+
+// ── ADMIN: LIVE PRODUCER LIST ──
+// Real-time listener on users where role == 'producer'. Newest signups first.
+let _liveProducersUnsub=null;
+let _liveProducersSeen=null;
+async function startLiveProducers(){
+  if(_liveProducersUnsub||!window._db) return;
+  try{
+    const {collection,query,where,onSnapshot}=await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    _liveProducersUnsub=onSnapshot(query(collection(window._db,'users'),where('role','==','producer')),snap=>{
+      const list=document.getElementById('ap-list'), cnt=document.getElementById('ap-count');
+      if(!list) return;
+      const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      rows.sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
+      if(cnt) cnt.textContent=rows.length+(rows.length===1?' producer':' producers');
+      const firstLoad=_liveProducersSeen===null;
+      const prev=_liveProducersSeen||new Set();
+      list.innerHTML=rows.length?rows.map(u=>{
+        const name=u.displayName||u.username||(u.email?String(u.email).split('@')[0]:'(no name)');
+        const when=u.createdAt&&u.createdAt.seconds?new Date(u.createdAt.seconds*1000).toLocaleDateString():'';
+        const isNew=!firstLoad&&!prev.has(u.id);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--grey2);">'
+          +'<div style="min-width:0;"><div style="color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(name)+(isNew?' <span style="color:var(--blue2);font-size:9px;letter-spacing:1px;">NEW</span>':'')+'</div>'
+          +'<div style="font-size:10px;margin-top:2px;">'+(when?'joined '+escapeHtml(when):'')+'</div></div>'
+          +'<div style="white-space:nowrap;">'+(Number(u.beatsCount)||0)+' beats</div></div>';
+      }).join(''):'No producers yet.';
+      _liveProducersSeen=new Set(rows.map(u=>u.id));
+    },err=>{
+      const list=document.getElementById('ap-list'); if(list) list.textContent='Could not load: '+(err.message||'error');
+      _liveProducersUnsub=null;
+    });
+  }catch(e){ console.error('Live producers failed:',e); }
+}
+function stopLiveProducers(){
+  if(_liveProducersUnsub){ try{_liveProducersUnsub();}catch(e){} _liveProducersUnsub=null; }
+  _liveProducersSeen=null;
 }
 
 // Loads every ambassador with at least one referral into the admin table —

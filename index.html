@@ -2595,28 +2595,69 @@ async function startLiveProducers(){
   try{
     const {collection,query,where,onSnapshot}=await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
     _liveProducersUnsub=onSnapshot(query(collection(window._db,'users'),where('role','==','producer')),snap=>{
-      const list=document.getElementById('ap-list'), cnt=document.getElementById('ap-count');
-      if(!list) return;
+      if(!document.getElementById('ap-list')) return;
       const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
       rows.sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
-      if(cnt) cnt.textContent=rows.length+(rows.length===1?' producer':' producers');
+      const cntEl=document.getElementById('ap-count');
+      if(cntEl) cntEl.textContent=rows.length+(rows.length===1?' producer':' producers');
       const firstLoad=_liveProducersSeen===null;
       const prev=_liveProducersSeen||new Set();
-      list.innerHTML=rows.length?rows.map(u=>{
-        const name=u.displayName||u.username||(u.email?String(u.email).split('@')[0]:'(no name)');
-        const when=u.createdAt&&u.createdAt.seconds?new Date(u.createdAt.seconds*1000).toLocaleDateString():'';
-        const isNew=!firstLoad&&!prev.has(u.id);
-        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--grey2);">'
-          +'<div style="min-width:0;"><div style="color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(name)+(isNew?' <span style="color:var(--blue2);font-size:9px;letter-spacing:1px;">NEW</span>':'')+'</div>'
-          +'<div style="font-size:10px;margin-top:2px;">'+(when?'joined '+escapeHtml(when):'')+'</div></div>'
-          +'<div style="white-space:nowrap;">'+(Number(u.beatsCount)||0)+' beats</div></div>';
-      }).join(''):'No producers yet.';
       _liveProducersSeen=new Set(rows.map(u=>u.id));
+      _apRows=rows; _apNew=new Set(firstLoad?[]:rows.filter(u=>!prev.has(u.id)).map(u=>u.id));
+      renderProducerRows();
+      refreshProducerStatus(rows.map(u=>u.id));
     },err=>{
       const list=document.getElementById('ap-list'); if(list) list.textContent='Could not load: '+(err.message||'error');
       _liveProducersUnsub=null;
     });
   }catch(e){ console.error('Live producers failed:',e); }
+}
+let _apRows=[], _apNew=new Set(), _apStatus={};
+function renderProducerRows(){
+  const list=document.getElementById('ap-list'); if(!list) return;
+  list.innerHTML=_apRows.length?_apRows.map(u=>{
+    const name=u.displayName||u.username||(u.email?String(u.email).split('@')[0]:'(no name)');
+    const when=u.createdAt&&u.createdAt.seconds?new Date(u.createdAt.seconds*1000).toLocaleDateString():'';
+    const st=_apStatus[u.id];
+    const unver=st&&st.verified===false;
+    const tag=(_apNew.has(u.id)?' <span style="color:var(--blue2);font-size:9px;letter-spacing:1px;">NEW</span>':'')
+      +(unver?' <span style="color:#ff9f43;font-size:9px;letter-spacing:1px;border:1px solid #ff9f43;border-radius:4px;padding:1px 5px;">UNVERIFIED</span>':'');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--grey2);">'
+      +'<div style="min-width:0;"><div style="color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(name)+tag+'</div>'
+      +'<div style="font-size:10px;margin-top:2px;">'+(when?'joined '+escapeHtml(when):'')+'</div></div>'
+      +'<div style="white-space:nowrap;display:flex;align-items:center;gap:10px;">'+(Number(u.beatsCount)||0)+' beats'
+      +(u.id!==ADMIN_UID?'<button class="rbtn" style="padding:6px 10px;" data-uid="'+escapeHtml(u.id)+'" data-name="'+escapeHtml(name)+'" onclick="removeProducer(this.dataset.uid,this.dataset.name)">Remove</button>':'')
+      +'</div></div>';
+  }).join(''):'No producers yet.';
+}
+async function refreshProducerStatus(uids){
+  try{
+    if(!uids.length||!window._currentUser) return;
+    const tok=await window._currentUser.getIdToken();
+    const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({action:'status',uids})});
+    if(!r.ok) return;
+    const d=await r.json();
+    _apStatus=Object.assign({},_apStatus,d.status||{});
+    renderProducerRows();
+  }catch(e){ /* badges are optional; list still works */ }
+}
+async function removeProducer(uid,name){
+  if(!isAdmin()||!uid) return;
+  if(!confirm('REMOVE "'+name+'" from KLAVE?\n\nThis permanently deletes their account, profile and all their beats. This cannot be undone.')) return;
+  try{
+    toast('Removing…');
+    const tok=await window._currentUser.getIdToken();
+    const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({action:'remove',uid})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error||'Remove failed');
+    toast('Removed '+name+' ✓');
+    if(window._firestoreBeats) window._firestoreBeats=window._firestoreBeats.filter(b=>b.producerId!==uid);
+    if(typeof renderHome==='function') renderHome();
+    if(typeof renderSearch==='function') renderSearch(getBeats());
+  }catch(e){
+    console.error(e);
+    toast('Remove failed: '+e.message);
+  }
 }
 function stopLiveProducers(){
   if(_liveProducersUnsub){ try{_liveProducersUnsub();}catch(e){} _liveProducersUnsub=null; }

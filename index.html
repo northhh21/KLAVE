@@ -2118,7 +2118,7 @@ function renderHome(){
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
     const exclTag = b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '';
-    const isMine = window._currentUser && b.producerId === window._currentUser.uid;
+    const isMine = window._currentUser && (b.producerId === window._currentUser.uid || isAdmin());
     const actionBtn = isMine
       ? '<button class="report-btn" title="Delete" onclick="deleteBeat(\''+(b.id||'')+'\',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>'
       : '<button class="report-btn" data-title="'+escapeHtml(b.title)+'" onclick="openReport(this.dataset.title,event)" title="Report"><svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button>';
@@ -2139,7 +2139,7 @@ function renderSearch(list){
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
     const exclTag = b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '';
-    const isMine = window._currentUser && b.producerId === window._currentUser.uid;
+    const isMine = window._currentUser && (b.producerId === window._currentUser.uid || isAdmin());
     const actionBtn = isMine
       ? `<button class="report-btn" title="Delete" onclick="deleteBeat('${b.id||''}',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>`
       : '';
@@ -2774,7 +2774,9 @@ async function deleteBeat(id,e){
   if(e)e.stopPropagation();
   if(!id){toast('Cannot delete this beat');return;}
   if(!window._currentUser){toast('Sign in required');return;}
-  if(!confirm('Delete this beat? This cannot be undone.'))return;
+  const _db=(window._firestoreBeats||[]).find(x=>x.id===id);
+  const _others=isAdmin() && _db && _db.producerId!==window._currentUser.uid;
+  if(!confirm(_others?('ADMIN: delete "'+(_db.title||'this beat')+'" by '+(_db.prod||'another producer')+'? This cannot be undone.'):'Delete this beat? This cannot be undone.'))return;
   try{
     await window._deleteDoc(window._doc(window._db,'beats',id));
     if(window._firestoreBeats){

@@ -144,11 +144,21 @@
         window._firestoreBeats = snap.docs.map(d=>{const o={id:d.id,...d.data()}; if(typeof o.title==='string'){const c=o.title.replace(/^\s*\d+\.(?!\d)\s*/,'').trim(); if(c) o.title=c;} return o;});
         if(typeof renderHome === 'function') renderHome();
         if(typeof renderSearch === 'function') renderSearch();
+        if(!window._deepBeatDone) window._openBeatFromLink();
       }
     } catch(e){ console.log('using local beats') }
     finally { document.documentElement.classList.remove('beats-loading'); }
   }
   window.addEventListener('load', loadBeats);
+  window._openBeatFromLink=function(){
+    try{
+      const m=location.pathname.match(/^\/beat\/([A-Za-z0-9_-]+)\/?$/); if(!m) return;
+      const id=m[1], b=(window._firestoreBeats||[]).find(x=>x.id===id);
+      if(!b){ if(window.toast) window.toast('This beat is no longer available'); return; }
+      window._deepBeatDone=true;
+      if(typeof window._showBeatFromLink==='function') window._showBeatFromLink(b);
+    }catch(e){ console.warn(e); }
+  };
   window._loadBeats=loadBeats;
 </script>
 
@@ -396,6 +406,11 @@ body::before{
 /* waveform card art */
 .bc-wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:1.5px;padding:0 10px;opacity:.55;}
 .bc-wave .wb{width:2px;background:var(--blue);border-radius:1px;flex-shrink:0;}
+.bc-ver{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:var(--M);font-size:7px;letter-spacing:1px;text-transform:uppercase;padding:3px 6px;background:rgba(10,10,15,.82);color:#7dffb0;border:1px solid rgba(125,255,176,.45);z-index:2;font-weight:700;}
+.fp-ver{display:none;align-items:center;gap:6px;margin:10px 24px 0;font-family:var(--M);font-size:10px;letter-spacing:1px;color:#7dffb0;}
+.fp-ver.on{display:flex;}
+.fp-adm{display:none;margin:8px 24px 0;font-family:var(--M);font-size:10px;letter-spacing:1px;background:none;border:1px dashed var(--muted);color:var(--muted2);padding:6px 10px;border-radius:6px;cursor:pointer;}
+.fp-adm.on{display:inline-block;}
 .bc-badge{position:absolute;top:8px;left:8px;font-family:var(--M);font-size:7px;letter-spacing:1px;text-transform:uppercase;padding:3px 6px;background:var(--blue);color:#fff;z-index:2;font-weight:700;}
 .bc-tiers{display:flex;gap:10px;margin-top:6px;font-family:var(--M);font-size:8px;color:var(--muted2);}
 .bc-tiers b{display:block;font-size:10px;color:var(--white);font-weight:700;margin-top:1px;}
@@ -1756,6 +1771,8 @@ html:not(.role-artist) .artist-only{display:none !important;}
     </div>
     <button class="fp-ic" onclick="openRateModal()" aria-label="Rate this beat"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
   </div>
+  <div class="fp-ver" id="fp-ver">✓ VERIFIED HUMAN-MADE</div>
+  <button class="fp-adm" id="fp-adm" onclick="toggleHumanVerified()"></button>
   <div class="fp-seekwrap">
     <input type="range" class="fp-seek" id="fp-seek" min="0" max="1000" value="0" step="1" oninput="fpSeekInput()" onchange="fpSeekCommit()" aria-label="Seek"/>
     <div class="fp-times"><span id="fp-cur">0:00</span><span id="fp-dur">0:00</span></div>
@@ -2092,7 +2109,7 @@ function renderBeatCards(list){
     const d=document.createElement('div');
     d.className='beat-card';d.style.animationDelay=(i*.06)+'s';
     const badge = b.exclPrice ? '<div class="bc-badge">Premium</div>' : (i===0 ? '<div class="bc-badge">New</div>' : '');
-    d.innerHTML='<div class="bc-art">'+coverImg(b)+badge+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(24)+'</div>')+'<div class="bc-play-over">▶</div></div>'
+    d.innerHTML='<div class="bc-art">'+coverImg(b)+badge+(b.humanVerified?'<div class="bc-ver">✓ Human-Made</div>':'')+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(24)+'</div>')+'<div class="bc-play-over">▶</div></div>'
       +'<div class="bc-title">'+escapeHtml(b.title)+'</div><div class="bc-prod">prod. <span class="prod-link" data-uid="'+escapeHtml(b.producerId||'')+'" data-name="'+escapeHtml(b.prod)+'" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">'+escapeHtml(b.prod)+'</span> · '+(b.plays||0)+' plays</div>'
       +'<div class="bc-tiers"><div>MP3<b>'+formatKlavePrice(b.price)+'</b></div>'+(b.exclPrice?'<div class="excl">EXCL<b>'+formatKlavePrice(b.exclPrice)+'</b></div>':'')+'</div>';
     d.onclick=()=>playBeat(b.id||i);
@@ -3028,8 +3045,30 @@ function fpSync(){
     buy.style.display='';
   }
   document.getElementById('fp-note').textContent=capped?(FREE_PREVIEW_SECONDS+'s preview'):'';
+  {const v=document.getElementById('fp-ver'); if(v) v.classList.toggle('on',!!cur.humanVerified);
+   const a=document.getElementById('fp-adm'); if(a){ const show=isAdmin()&&!!cur.id; a.classList.toggle('on',show); a.textContent=cur.humanVerified?'ADMIN: REMOVE VERIFIED BADGE':'ADMIN: MARK HUMAN-MADE VERIFIED'; }}
   fpUpdateModes(); fpUpdateProgress(); fpUpdatePlayIcon();
 }
+async function toggleHumanVerified(){
+  if(!cur||!cur.id||!isAdmin()) return;
+  const next=!cur.humanVerified;
+  try{
+    await window._setDoc(window._doc(window._db,'beats',cur.id),{humanVerified:next},{merge:true});
+    cur.humanVerified=next;
+    const row=(window._firestoreBeats||[]).find(x=>x.id===cur.id); if(row) row.humanVerified=next;
+    fpSync(); if(typeof renderHome==='function') renderHome();
+    toast(next?'Marked Human-Made verified':'Badge removed');
+  }catch(e){ toast('Failed: '+e.message); }
+}
+window._showBeatFromLink=function(b){
+  cur=b;prog=0;
+  document.getElementById('mp-title').textContent=b.title;
+  document.getElementById('mp-prod').textContent='prod. '+b.prod;
+  {const th=document.getElementById('mp-thumb');if(b.coverUrl)th.innerHTML='<img src="'+escapeHtml(b.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;" alt=""/>';else th.textContent=b.title[0];}
+  document.getElementById('mini-player').classList.add('on');
+  try{ audioEl.src=previewSrc(b); }catch(e){}
+  openFullPlayer();
+};
 function openFullPlayer(){
   if(!cur){toast('Play a beat first');return;}
   fpSync();
@@ -3082,8 +3121,9 @@ async function fpShare(){
   if(!cur) return;
   const text=cur.title+' — prod. '+cur.prod+' on KLAVE';
   try{
-    if(navigator.share){ await navigator.share({title:cur.title,text,url:location.origin}); return; }
-    await navigator.clipboard.writeText(text+' '+location.origin);
+    const link=cur.id?(location.origin+'/beat/'+cur.id):location.origin;
+    if(navigator.share){ await navigator.share({title:cur.title,text,url:link}); return; }
+    await navigator.clipboard.writeText(text+' '+link);
     toast('Link copied');
   }catch(e){ /* share sheet dismissed */ }
 }

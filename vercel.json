@@ -4,5 +4,8 @@
       "path": "/api/check-expiring-subs",
       "schedule": "10 0 * * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/beat/:id", "destination": "/index.html" }
   ]
 }

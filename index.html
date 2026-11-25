@@ -440,6 +440,7 @@ body::before{
 .bl-art .bc-wave .wb{width:1.5px;}
 .bl-info{flex:1;min-width:0;}
 .bl-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
+.bl-ver-tag{font-family:var(--M);font-size:7px;letter-spacing:.5px;text-transform:uppercase;padding:2px 5px;margin-left:4px;background:rgba(125,255,176,.12);color:#7dffb0;border:1px solid rgba(125,255,176,.5);flex-shrink:0;font-weight:700;white-space:nowrap;}
 .bl-excl-tag{font-family:var(--M);font-size:7px;letter-spacing:.5px;text-transform:uppercase;padding:2px 5px;background:var(--blue);color:#fff;flex-shrink:0;font-weight:700;}
 .bl-prod{font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:1px;margin-top:2px;}
 .bl-price{font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;}
@@ -1074,7 +1075,7 @@ html:not(.role-artist) .artist-only{display:none !important;}
   <!-- HOME -->
   <div class="screen active" id="s-home">
     <div class="home-wrap">
-      <div class="hm-strip"><div class="hm-dot"></div><div><b>100% HUMAN-MADE BEATS</b><span>Every producer is verified by stem upload. No AI-generated tracks.</span></div></div>
+      <div class="hm-strip"><div class="hm-dot"></div><div><b>VERIFIED HUMAN-MADE BEATS</b><span>Every producer is verified by stem upload. No AI-generated tracks.</span></div></div>
       <div class="featured" id="featured-card">
         <div class="featured-loading glitch-t" data-text="LOADING BEATS">LOADING BEATS</div>
         <div class="featured-tag" id="featured-tag">// KLAVE</div>
@@ -2145,7 +2146,7 @@ function renderHome(){
   list.forEach((b,i)=>{
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
-    const exclTag = b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '';
+    const exclTag = (b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '')+(b.humanVerified?'<span class="bl-ver-tag">✓ Human</span>':'');
     const isMine = window._currentUser && (b.producerId === window._currentUser.uid || isAdmin());
     const actionBtn = isMine
       ? '<button class="report-btn" title="Delete" onclick="deleteBeat(\''+(b.id||'')+'\',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>'
@@ -2166,7 +2167,7 @@ function renderSearch(list){
   beats.forEach((b,i)=>{
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
-    const exclTag = b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '';
+    const exclTag = (b.exclPrice ? '<span class="bl-excl-tag">Excl</span>' : '')+(b.humanVerified?'<span class="bl-ver-tag">✓ Human</span>':'');
     const isMine = window._currentUser && (b.producerId === window._currentUser.uid || isAdmin());
     const actionBtn = isMine
       ? `<button class="report-btn" title="Delete" onclick="deleteBeat('${b.id||''}',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>`
@@ -4401,7 +4402,7 @@ function renderProducerBeats(list){
   list.forEach((b,i)=>{
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
-    const exclTag=b.exclPrice?'<span class="bl-excl-tag">Excl</span>':'';
+    const exclTag=(b.exclPrice?'<span class="bl-excl-tag">Excl</span>':'')+(b.humanVerified?'<span class="bl-ver-tag">✓ Human</span>':'');
     r.innerHTML='<div class="bl-num">'+String(i+1).padStart(2,'0')+'</div><div class="bl-art">'+coverImg(b)+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>')+'</div><div class="bl-info"><div class="bl-title">'+escapeHtml(b.title)+exclTag+'</div><div class="bl-prod">'+escapeHtml(b.genre)+'</div></div><div class="bl-price">'+formatKlavePrice(b.price)+'</div><button class="bl-buy" onclick="doBuy(\''+(b.id||i)+'\',event)">BUY</button>';
     r.addEventListener('click',e=>{ if(e.target.classList.contains('bl-buy')) return; playBeat(b.id||i); });
     wrap.appendChild(r);

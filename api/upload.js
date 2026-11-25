@@ -168,6 +168,11 @@ export default async function handler(req, res) {
       .slice(0, 60);
 
     const isCover = kind === 'cover';
+    // WAV only for beat audio (covers are images). The browser also checks the
+    // file header; this stops anyone calling the API directly with another format.
+    if (!isCover && !/\.wav$/i.test(fileName || '')) {
+      return res.status(400).json({ error: 'WAV files only. Export your beat as .wav' });
+    }
     const folder = isCover ? 'covers' : 'beats';
     const publicId = `${folder}/${Date.now()}_${safeName}`;
     const timestamp = Math.round(Date.now() / 1000);

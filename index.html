@@ -2833,8 +2833,9 @@ async function removeProducer(uid,name){
     toast('Removing…');
     const tok=await window._currentUser.getIdToken();
     const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({action:'remove',uid})});
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(data.error||'Remove failed');
+    const raw=await r.text();
+    let data={}; try{ data=JSON.parse(raw); }catch(_){}
+    if(!r.ok) throw new Error(data.error||('HTTP '+r.status+' '+(raw||'').replace(/<[^>]*>/g,' ').trim().slice(0,90)));
     toast('Removed '+name+' ✓');
     if(window._firestoreBeats) window._firestoreBeats=window._firestoreBeats.filter(b=>b.producerId!==uid);
     if(typeof renderHome==='function') renderHome();

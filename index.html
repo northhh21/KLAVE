@@ -1295,10 +1295,10 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
       <div class="upload-hero" id="upload-hero" onclick="document.getElementById('af').click()">
         <div class="uh-icon">🎵</div>
         <div class="uh-title">Drop Your Beat</div>
-        <div class="uh-sub"><span>Tap to select</span> or drag & drop<br>.mp3 / .wav — max 50MB</div>
+        <div class="uh-sub"><span>Tap to select</span> or drag & drop<br>.wav only — max 50MB</div>
         <div class="uh-file-name" id="uh-fname"></div>
       </div>
-      <input type="file" id="af" accept=".mp3,.wav,audio/*" style="display:none" onchange="onFileSelect(this)"/>
+      <input type="file" id="af" accept=".wav,audio/wav,audio/x-wav" style="display:none" onchange="onFileSelect(this)"/>
       <div class="fg">
         <label class="fl">Cover Art (optional)</label>
         <div class="cover-pick">
@@ -1306,6 +1306,11 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
           <button type="button" class="rbtn" onclick="document.getElementById('cover-input').click()">CHOOSE IMAGE</button>
         </div>
         <input type="file" id="cover-input" accept="image/*" style="display:none" onchange="onCoverSelect(this)"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Stems link (optional, private)</label>
+        <input class="fi" id="up-stems" type="url" placeholder="https://drive.google.com/..." autocomplete="off"/>
+        <div style="font-size:12px;color:var(--muted2);margin-top:6px;line-height:1.5;">Link to your stems (Drive, Dropbox, WeTransfer) or a screen recording of the project. Only the KLAVE admin can see it. It speeds up your Human-Made badge.</div>
       </div>
       <div class="nero-analyze" id="nero-analyze">
         <div class="na-title">NERO ANALYSIS</div>
@@ -1437,7 +1442,7 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
     <div id="mp-bulk" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg3);border:1px solid var(--grey2);border-radius:8px;">
       <div style="font-size:16px;font-weight:800;letter-spacing:1px;margin-bottom:4px;" id="bulk-heading">BULK UPLOAD</div>
       <div style="font-family:var(--M);font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:12px;">// pick many files at once. the genre, mood and prices below apply to every beat, unless you pick a different genre or mood on a row.</div>
-      <input type="file" id="bulk-files" accept="audio/*" multiple onchange="onBulkFiles(this)" style="margin-bottom:12px;font-family:var(--M);font-size:11px;color:#fff;width:100%;">
+      <input type="file" id="bulk-files" accept=".wav,audio/wav,audio/x-wav" multiple onchange="onBulkFiles(this)" style="margin-bottom:12px;font-family:var(--M);font-size:11px;color:#fff;width:100%;">
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <select id="bulk-genre" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;"></select>
         <select id="bulk-mood" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--grey2);color:#fff;font-family:var(--M);font-size:12px;border-radius:8px;box-sizing:border-box;"></select>
@@ -1941,6 +1946,7 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
   <div class="fp-tags" id="fp-tags"></div>
   <div class="fp-ver" id="fp-ver">✓ VERIFIED HUMAN-MADE</div>
   <button class="fp-adm" id="fp-adm" onclick="toggleHumanVerified()"></button>
+  <button class="fp-adm" id="fp-stems" onclick="viewStemsProof()">ADMIN: VIEW STEMS PROOF</button>
   <div class="fp-seekwrap">
     <input type="range" class="fp-seek" id="fp-seek" min="0" max="1000" value="0" step="1" oninput="fpSeekInput()" onchange="fpSeekCommit()" aria-label="Seek"/>
     <div class="fp-times"><span id="fp-cur">0:00</span><span id="fp-dur">0:00</span></div>
@@ -3216,8 +3222,18 @@ function fpSync(){
   }
   document.getElementById('fp-note').textContent=capped?(FREE_PREVIEW_SECONDS+'s preview'):'';
   {const v=document.getElementById('fp-ver'); if(v) v.classList.toggle('on',!!cur.humanVerified);
-   const a=document.getElementById('fp-adm'); if(a){ const show=isAdmin()&&!!cur.id; a.classList.toggle('on',show); a.textContent=cur.humanVerified?'ADMIN: REMOVE VERIFIED BADGE':'ADMIN: MARK HUMAN-MADE VERIFIED'; }}
+   const a=document.getElementById('fp-adm'); if(a){ const show=isAdmin()&&!!cur.id; a.classList.toggle('on',show); {const st=document.getElementById('fp-stems'); if(st) st.classList.toggle('on',isAdmin()&&!!cur.id);}
+   a.textContent=cur.humanVerified?'ADMIN: REMOVE VERIFIED BADGE':'ADMIN: MARK HUMAN-MADE VERIFIED'; }}
   fpUpdateModes(); fpUpdateProgress(); fpUpdatePlayIcon();
+}
+async function viewStemsProof(){
+  if(!cur||!cur.id||!isAdmin()) return;
+  try{
+    const snap=await window._getDoc(window._doc(window._db,'stemProofs',cur.id));
+    if(!snap.exists()){ toast('No stems link submitted for this beat'); return; }
+    const link=snap.data().link;
+    if(/^https:\/\//i.test(link||'')) window.open(link,'_blank','noopener'); else toast('Invalid link on file');
+  }catch(e){ toast('Could not load: '+e.message); }
 }
 async function toggleHumanVerified(){
   if(!cur||!cur.id||!isAdmin()) return;
@@ -3325,9 +3341,37 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&fpOpen) closeFullP
 })();
 
 // ── UPLOAD ──
+function _isWavName(n){ return /\.wav$/i.test(n||''); }
+function _checkWavHeader(f){
+  return new Promise(function(resolve){
+    try{
+      const r=new FileReader();
+      r.onload=function(){
+        const b=new Uint8Array(r.result);
+        const t=function(o,x){ return String.fromCharCode(b[o],b[o+1],b[o+2],b[o+3])===x; };
+        resolve(b.length>=12 && (t(0,'RIFF')||t(0,'RF64')) && t(8,'WAVE'));
+      };
+      r.onerror=function(){ resolve(false); };
+      r.readAsArrayBuffer(f.slice(0,12));
+    }catch(e){ resolve(false); }
+  });
+}
 function onFileSelect(input){
   if(!input.files[0])return;
   const f=input.files[0];
+  if(!_isWavName(f.name)){
+    toast('WAV files only. Export your beat as .wav');
+    input.value='';
+    return;
+  }
+  _checkWavHeader(f).then(function(ok){
+    if(!ok){
+      toast('That is not a real WAV file. Export it again as .wav');
+      input.value='';
+      const fn=document.getElementById('uh-fname'); if(fn) fn.textContent='';
+      const uh=document.getElementById('upload-hero'); if(uh) uh.classList.remove('has-file');
+    }
+  });
   // Hard cap matching the advertised "max 50MB" — previously only a soft
   // warning existed at 15MB, so oversized files were accepted here and
   // only failed later, deep in the upload pipeline, with a confusing error.
@@ -3345,7 +3389,7 @@ function onFileSelect(input){
   if(f.size>15*1024*1024){
     const isWav=f.name.toLowerCase().endsWith('.wav');
     warnText.textContent=isWav
-      ?'WAV file detected ('+size+'MB). This may take a while on slow connections. Consider converting to MP3 first for faster uploads.'
+      ?'WAV file detected ('+size+'MB). This may take a while on slow connections. Keep your connection on until it finishes.'
       :'Large file detected ('+size+'MB). Upload may be slow on mobile. Recommended: keep files under 15MB.';
     warn.style.display='block';
   } else {
@@ -3417,6 +3461,9 @@ async function publishBeat(){
   const audioFile=document.getElementById('af').files[0];
   if(!title||!price){toast('Fill in title and price');return;}
   if(!audioFile){toast('Select an audio file');return;}
+  if(!_isWavName(audioFile.name)){toast('WAV files only. Export your beat as .wav');return;}
+  const stemsLink=((document.getElementById('up-stems')||{}).value||'').trim();
+  if(stemsLink && !/^https:\/\/\S+$/i.test(stemsLink)){toast('Stems link must start with https://');return;}
   const priceNum=Number(price);
   const exclNum=excl?Number(excl):0;
   if(!Number.isFinite(priceNum)||priceNum<0){toast('Enter a valid price');return;}
@@ -3535,6 +3582,7 @@ async function publishBeat(){
     const newBeatRef=doc(window._collection(window._db,'beats'));
     const batch=writeBatch(window._db);
     batch.set(newBeatRef,{title:cleanBeatTitle(title).toUpperCase(),bpm:Number(bpm)||0,key,genre:genre.toLowerCase(),mood:mood.toLowerCase(),price:priceNum,exclPrice:exclNum,prod:window._currentDisplayName||window._currentUser.email.split('@')[0],producerId:window._currentUser.uid,producerTier:_tier,audioUrl:String(cd.secure_url).replace(/\/s--[^/]+--\//,'/'),...(sign.previewUrl?{previewUrl:sign.previewUrl}:{}),...(coverUrl?{coverUrl}:{}),duration:cd.duration||0,createdAt:window._ts(),plays:0});
+    if(stemsLink) batch.set(doc(window._db,'stemProofs',newBeatRef.id),{producerId:window._currentUser.uid,link:stemsLink,createdAt:window._ts()});
     batch.update(doc(window._db,'users',window._currentUser.uid),{beatsCount:increment(1)});
     await batch.commit();
     }
@@ -3822,6 +3870,7 @@ function closeBulkUpload(){
 }
 function onBulkFiles(inp){
   Array.from(inp.files||[]).forEach(f=>{
+    if(!_isWavName(f.name)){ toast('Skipped '+f.name+' (WAV only)'); return; }
     _bulkItems.push({file:f,title:bulkTitleFromFile(f.name),bpm:'',key:'',genre:'',mood:'',status:'ready'});
   });
   inp.value='';

@@ -2,6 +2,8 @@
 // Verifies a Paystack beat purchase server-side, records the order once,
 // credits any referral commission once, and emails the download link.
 //
+// Also handles CART purchases: metadata.items = [{beatId,tier}], one Paystack payment for several beats.
+//
 // Changes in this version:
 //  - IDEMPOTENT: replaying the same reference no longer re-credits referral
 //    commission or re-sends the email (the order doc is the "already done" marker).
@@ -180,6 +182,119 @@ export default async function handler(req, res) {
       return res.status(402).json({
         error: 'Payment not successful',
         details: verifyData.data?.gateway_response || 'Unknown reason',
+      });
+    }
+
+    // ── CART PURCHASE: several beats paid in one Paystack transaction ──
+    const meta0 = verifyData.data.metadata || {};
+    if (Array.isArray(meta0.items)) {
+      const cBuyer = meta0.buyerId;
+      const cEmail = meta0.email || null;
+      const items = meta0.items;
+      if (!cBuyer) return res.status(400).json({ error: 'Transaction metadata missing buyerId.' });
+      if (callerUid && callerUid !== cBuyer) {
+        return res.status(403).json({ error: 'This payment belongs to a different account' });
+      }
+      if (verifyData.data.currency !== 'NGN') {
+        return res.status(400).json({ error: `Unsupported currency: ${verifyData.data.currency}` });
+      }
+      if (items.length < 1 || items.length > 10) {
+        return res.status(400).json({ error: 'Cart must contain 1 to 10 beats.' });
+      }
+      const seen = new Set();
+      for (const it of items) {
+        if (!it || typeof it.beatId !== 'string' || !it.beatId || seen.has(it.beatId)) {
+          return res.status(400).json({ error: 'Invalid or duplicate beat in cart.' });
+        }
+        if (it.tier !== 'standard' && it.tier !== 'exclusive') {
+          return res.status(400).json({ error: `Unrecognized tier: ${it.tier}` });
+        }
+        seen.add(it.beatId);
+      }
+      const cPaidNaira = verifyData.data.amount / 100;
+      const cBeatRefs = items.map((it) => db.collection('beats').doc(it.beatId));
+      const cSnaps = await Promise.all(cBeatRefs.map((r) => r.get()));
+      if (cSnaps.some((sn) => !sn.exists)) {
+        return res.status(404).json({ error: 'A beat in this cart no longer exists' });
+      }
+      const cBeats = cSnaps.map((sn) => sn.data());
+      const cPrices = items.map((it, i) => (it.tier === 'exclusive' ? cBeats[i].exclPrice : cBeats[i].price));
+      if (cPrices.some((p) => typeof p !== 'number')) {
+        return res.status(400).json({ error: 'A beat in this cart has no price for the chosen license' });
+      }
+      const cTotalUsd = cPrices.reduce((a, b) => a + b, 0);
+      const cRate = await getUsdToNgnRate();
+      if (cPaidNaira < cTotalUsd * cRate * 0.95) {
+        return res.status(402).json({
+          error: 'Amount paid is below the expected converted price',
+          expectedUsd: cTotalUsd, liveRate: cRate, amountPaidNaira: cPaidNaira,
+        });
+      }
+
+      refundInfo = { reference, buyerId: cBuyer, cart: true, items, amountPaidNaira: cPaidNaira, email: cEmail };
+      // One order doc per beat: <reference>-1, <reference>-2 ... The first one is the replay marker.
+      const cOrderRefs = items.map((_, i) => db.collection('orders').doc(`${reference}-${i + 1}`));
+
+      const cIsNew = await db.runTransaction(async (t) => {
+        const orderSnaps = await Promise.all(cOrderRefs.map((r) => t.get(r)));
+        const freshSnaps = await Promise.all(cBeatRefs.map((r) => t.get(r)));
+        if (orderSnaps[0].exists) return false; // replay
+        if (freshSnaps.some((sn) => sn.data().soldExclusive)) throw new Error(SOLD_MSG);
+        items.forEach((it, i) => {
+          if (it.tier === 'exclusive') t.update(cBeatRefs[i], { soldExclusive: true });
+          t.set(cOrderRefs[i], {
+            buyerId: cBuyer,
+            beatId: it.beatId,
+            amount: cPrices[i],
+            amountPaidNaira: Math.round((cPrices[i] / cTotalUsd) * cPaidNaira * 100) / 100,
+            exchangeRateUsed: cRate,
+            tier: it.tier,
+            email: cEmail,
+            status: 'completed',
+            paystackReference: reference,
+            cartReference: reference,
+            beatTitle: cBeats[i].title,
+            producerId: cBeats[i].producerId,
+            createdAt: new Date().toISOString(),
+          });
+        });
+        return true;
+      });
+
+      const cUrls = cBeats.map((b) => buyerDownloadUrl(b, process.env.CLOUDINARY_API_SECRET));
+      if (cIsNew) {
+        let buyerEmail = cEmail;
+        if (!buyerEmail) {
+          try {
+            const bs = await db.collection('users').doc(cBuyer).get();
+            buyerEmail = bs.exists ? bs.data().email : null;
+          } catch (e) { /* ignore */ }
+        }
+        for (let i = 0; i < items.length; i++) {
+          try {
+            await creditReferralCommission({ buyerId: cBuyer, saleAmountUsd: cPrices[i], beatId: items[i].beatId, reference: `${reference}-${i + 1}` });
+          } catch (e) { console.error('Referral commission crediting failed:', e); }
+          try {
+            await sendDownloadEmail({ toEmail: buyerEmail, beat: { ...cBeats[i], audioUrl: cUrls[i] }, tier: items[i].tier, reference: `${reference}-${i + 1}` });
+          } catch (e) { console.error('Download email failed to send:', e); }
+        }
+      }
+
+      const showLinks = cIsNew || (callerUid && callerUid === cBuyer);
+      return res.status(200).json({
+        success: true,
+        cart: true,
+        alreadyProcessed: !cIsNew,
+        reference,
+        amountPaidNaira: cPaidNaira,
+        currency: 'NGN',
+        items: items.map((it, i) => ({
+          beatId: it.beatId,
+          title: cBeats[i].title,
+          prod: cBeats[i].prod,
+          tier: it.tier,
+          audioUrl: showLinks ? cUrls[i] : undefined,
+        })),
       });
     }
 

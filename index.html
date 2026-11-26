@@ -2029,6 +2029,7 @@ html.role-artist .mn-sell{display:none;}
   <div class="fp-ver" id="fp-ver">✓ VERIFIED HUMAN-MADE</div>
   <button class="fp-adm" id="fp-adm" onclick="toggleHumanVerified()"></button>
   <button class="fp-adm" id="fp-stems" onclick="viewStemsProof()">ADMIN: VIEW STEMS PROOF</button>
+  <button class="fp-adm" id="fp-stemsadd" onclick="addStemsLink()">ADD STEMS LINK FOR THIS BEAT</button>
   <div class="fp-seekwrap">
     <input type="range" class="fp-seek" id="fp-seek" min="0" max="1000" value="0" step="1" oninput="fpSeekInput()" onchange="fpSeekCommit()" aria-label="Seek"/>
     <div class="fp-times"><span id="fp-cur">0:00</span><span id="fp-dur">0:00</span></div>
@@ -3310,8 +3311,21 @@ function fpSync(){
   document.getElementById('fp-note').textContent=capped?(FREE_PREVIEW_SECONDS+'s preview'):'';
   {const v=document.getElementById('fp-ver'); if(v) v.classList.toggle('on',!!cur.humanVerified);
    const a=document.getElementById('fp-adm'); if(a){ const show=isAdmin()&&!!cur.id; a.classList.toggle('on',show); {const st=document.getElementById('fp-stems'); if(st) st.classList.toggle('on',isAdmin()&&!!cur.id);}
+   {const sa=document.getElementById('fp-stemsadd'); if(sa){ sa.classList.remove('on'); const u=window._currentUser; const bid=cur.id;
+      if(u&&bid&&cur.producerId===u.uid){ window._getDoc(window._doc(window._db,'stemProofs',bid)).then(function(sn){ if(!sn.exists()&&cur&&cur.id===bid) sa.classList.add('on'); }).catch(function(){}); } }}
    a.textContent=cur.humanVerified?'ADMIN: REMOVE VERIFIED BADGE':'ADMIN: MARK HUMAN-MADE VERIFIED'; }}
   fpUpdateModes(); fpUpdateProgress(); fpUpdatePlayIcon();
+}
+async function addStemsLink(){
+  if(!cur||!cur.id||!window._currentUser) return;
+  const link=(prompt('Paste a link to your stems (Drive, Dropbox, WeTransfer) or a screen recording of the project. Only the KLAVE admin can see it.')||'').trim();
+  if(!link) return;
+  if(!/^https:\/\/\S+$/i.test(link)){ toast('The link must start with https://'); return; }
+  try{
+    await window._setDoc(window._doc(window._db,'stemProofs',cur.id),{producerId:window._currentUser.uid,link:link,createdAt:window._ts()});
+    const sa=document.getElementById('fp-stemsadd'); if(sa) sa.classList.remove('on');
+    toast('Stems link sent to KLAVE for review');
+  }catch(e){ toast('Could not save: '+e.message); }
 }
 async function viewStemsProof(){
   if(!cur||!cur.id||!isAdmin()) return;

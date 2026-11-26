@@ -6,6 +6,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/beat/:id", "destination": "/index.html" }
+    { "source": "/beat/:id", "destination": "/api/verify-payment?og=1&id=:id" }
   ]
 }

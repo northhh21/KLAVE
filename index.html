@@ -1142,6 +1142,62 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
 .nero-panel{border-radius:22px 22px 0 0;}
 .empty-state{border-radius:16px;}
 .empty-state-sub{font-family:var(--H);font-size:12px;letter-spacing:0;}
+
+/* ═══ CART, TOP BAR, MENU (BeatStars app style) ═══ */
+.topbar{padding:0 10px 0 6px;}
+.tb-left{display:flex;align-items:center;gap:2px;}
+.tb-right{gap:2px;}
+.tb-ic{background:none;border:none;color:var(--white);width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;flex-shrink:0;}
+.tb-ic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.cart-badge{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--blue);color:#fff;font-family:var(--H);font-size:11px;font-weight:800;align-items:center;justify-content:center;border:2px solid var(--bg);}
+.tb-login{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:var(--H);font-size:14px;font-weight:700;cursor:pointer;margin-left:4px;}
+body.signed-in .tb-login{display:none;}
+body:not(.signed-in) .tb-avatar{display:none;}
+body:not(.signed-in) #mn-out{display:none;}
+.nav-item svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.menu-wrap{padding:6px 16px 28px;}
+.mn-head{display:flex;align-items:center;gap:14px;padding:14px 4px 18px;cursor:pointer;}
+.mn-av{width:56px;height:56px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;overflow:hidden;flex-shrink:0;color:var(--muted2);}
+.mn-av img{width:100%;height:100%;object-fit:cover;}
+.mn-id{flex:1;min-width:0;}
+.mn-name{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mn-tier{font-size:13px;color:var(--muted2);margin-top:2px;}
+.mn-title{font-size:20px;font-weight:800;letter-spacing:-.3px;margin:22px 0 12px 2px;}
+.mn-card{background:var(--bg2);border-radius:16px;overflow:hidden;}
+.mn-row{display:flex;align-items:center;gap:16px;padding:17px 16px;cursor:pointer;border-bottom:1px solid var(--grey);}
+.mn-row:last-child{border-bottom:none;}
+.mn-row:active{background:var(--bg3);}
+.mn-ic svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
+.mn-label{flex:1;font-size:16px;font-weight:500;}
+.mn-count{color:var(--blue2);font-weight:800;margin-left:6px;}
+.mn-chev{color:var(--muted2);font-size:24px;line-height:1;}
+.bc-cart{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(10,10,15,.78);color:#fff;font-size:20px;font-weight:700;line-height:1;cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;}
+.bl-cartbtn{background:var(--bg3);border:1px solid var(--grey2);color:var(--white);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.bl-cartbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.fp-cartbtn{display:block;width:100%;margin-top:12px;padding:13px;border-radius:999px;background:transparent;border:1.5px solid var(--grey2);color:var(--white);font-family:var(--H);font-size:14px;font-weight:700;cursor:pointer;}
+.cart-wrap{padding:12px 16px 28px;}
+.cart-item{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--grey);border-radius:14px;padding:10px;margin-bottom:10px;}
+.cart-art{width:64px;height:64px;border-radius:10px;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted2);}
+.cart-art img{width:100%;height:100%;object-fit:cover;}
+.cart-info{flex:1;min-width:0;}
+.cart-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cart-prod{font-size:12px;color:var(--muted2);margin-top:2px;}
+.cart-tiers{display:flex;gap:6px;margin-top:8px;}
+.cart-tier{font-family:var(--H);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--grey2);background:var(--bg3);color:var(--muted2);cursor:pointer;}
+.cart-tier.on{background:var(--white);color:var(--bg);border-color:var(--white);}
+.cart-side{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.cart-price{font-size:15px;font-weight:800;}
+.cart-rm{background:none;border:none;color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--H);}
+.cart-total{display:flex;justify-content:space-between;align-items:center;padding:16px 4px 6px;font-size:18px;font-weight:800;}
+.cart-pay{width:100%;padding:16px;border-radius:999px;border:none;background:var(--blue);color:#fff;font-family:var(--H);font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px var(--blueglow);margin-top:8px;}
+.cart-pay:disabled{opacity:.6;}
+.cart-note{font-size:12px;color:var(--muted2);text-align:center;margin-top:10px;line-height:1.5;}
+.cart-empty{text-align:center;padding:48px 16px;color:var(--muted2);font-size:14px;line-height:1.6;}
+.cart-dl{display:block;text-align:center;text-decoration:none;padding:12px;border-radius:999px;background:var(--blue);color:#fff;font-weight:800;font-size:14px;margin-top:8px;}
+
+html.role-artist .mn-sell{display:none;}
+.bc-cart svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.bottom-nav{justify-content:space-around;}
 </style>
 </head>
 <body>
@@ -1211,14 +1267,16 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="tb-logo" id="tb-logo" onclick="adminLogoTap()">KL<span>A</span>VE</div>
+  <div class="tb-left">
+    <button class="tb-ic" onclick="navTo('menu')" aria-label="Menu"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <div class="tb-logo" id="tb-logo" onclick="adminLogoTap()">KL<span>A</span>VE</div>
+  </div>
   <div class="tb-right">
-    <div class="nero-pill" onclick="toggleNero()"><div class="nero-dot"></div>NERO</div>
+    <button class="tb-ic" onclick="openCart()" aria-label="Cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h7.7a2 2 0 002-1.5L21 8H6"/></svg><span class="cart-badge" id="cart-badge" style="display:none">0</span></button>
+    <button class="tb-login" id="tb-login" onclick="gated('profile')">Login</button>
     <div class="tb-avatar" id="tb-av" onclick="navTo('profile')">?</div>
   </div>
 </div>
-
-
 
 <div class="bs-chrome" id="bs-chrome">
   <div class="bs-searchbar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="bs-q" placeholder="Search beats, producers, genres" autocomplete="off" oninput="bsSearch(this.value)"/></div>
@@ -1272,6 +1330,30 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
     </div>
   </div>
 
+  <!-- MENU -->
+  <div class="screen" id="s-menu">
+    <div class="menu-wrap">
+      <div class="mn-head" id="mn-head" onclick="gated('profile')"><div class="mn-av" id="mn-av">?</div><div class="mn-id"><div class="mn-name" id="mn-name">Welcome</div><div class="mn-tier" id="mn-tier">Log in to buy and sell beats</div></div><span class="mn-chev">›</span></div>
+      <div class="mn-title">My Shopping</div>
+      <div class="mn-card"><div class="mn-row" onclick="openCart()"><span class="mn-ic" style="color:#ffb02e"><svg viewBox="0 0 24 24"><path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg></span><span class="mn-label">Cart<span class="mn-count" id="mn-count"></span></span><span class="mn-chev">›</span></div></div>
+      <div class="mn-title">Settings</div>
+      <div class="mn-card"><div class="mn-row" onclick="gated('profile')"><span class="mn-ic" style="color:#9aa3b8"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="mn-label">Account &amp; profile</span><span class="mn-chev">›</span></div><div class="mn-row" onclick="gated('plans')"><span class="mn-ic" style="color:#a78bfa"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 1-5 4.9 1.2 7L12 18l-6.2 3.4L7 14.4 2 9.5l7-1z"/></svg></span><span class="mn-label">Plans</span><span class="mn-chev">›</span></div><div class="mn-row" onclick="toggleKlaveCurrency()"><span class="mn-ic" style="color:#34d399"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="mn-label">Currency ($ / ₦)</span><span class="mn-chev">›</span></div><div class="mn-row" onclick="toggleNero()"><span class="mn-ic" style="color:#5b8def"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></span><span class="mn-label">Ask NERO</span><span class="mn-chev">›</span></div></div>
+      <div class="mn-sell"><div class="mn-title">Sell on KLAVE</div>
+      <div class="mn-card"><div class="mn-row" onclick="producerOnly('upload')"><span class="mn-ic" style="color:#ff5a5f"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="mn-label">Upload a beat</span><span class="mn-chev">›</span></div></div></div>
+      <div class="mn-card mn-out" id="mn-out" style="margin-top:22px;"><div class="mn-row" onclick="doSignOut()"><span class="mn-label" style="color:#ff6677;">Sign out</span></div></div>
+    </div>
+  </div>
+
+  <!-- CART -->
+  <div class="screen" id="s-cart">
+    <div class="cart-wrap">
+      <div class="section-head"><div class="section-title">Your cart</div><div class="section-more" onclick="navTo('home')">Keep browsing ›</div></div>
+      <div id="cart-list"></div>
+      <div id="cart-summary"></div>
+      <div id="cart-done"></div>
+    </div>
+  </div>
+
   <!-- SEARCH -->
   <div class="screen" id="s-search">
     <div class="search-wrap">
@@ -1308,9 +1390,9 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
         <input type="file" id="cover-input" accept="image/*" style="display:none" onchange="onCoverSelect(this)"/>
       </div>
       <div class="fg">
-        <label class="fl">Stems link (optional, private)</label>
+        <label class="fl">Stems link (required, private)</label>
         <input class="fi" id="up-stems" type="url" placeholder="https://drive.google.com/..." autocomplete="off"/>
-        <div style="font-size:12px;color:var(--muted2);margin-top:6px;line-height:1.5;">Link to your stems (Drive, Dropbox, WeTransfer) or a screen recording of the project. Only the KLAVE admin can see it. It speeds up your Human-Made badge.</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:6px;line-height:1.5;">Link to your stems (Drive, Dropbox, WeTransfer) or a screen recording of the project. Required for every beat. Only the KLAVE admin can see it, and it is how your beat earns the Human-Made badge.</div>
       </div>
       <div class="nero-analyze" id="nero-analyze">
         <div class="na-title">NERO ANALYSIS</div>
@@ -1968,25 +2050,30 @@ html[data-theme="light"] .bottom-nav{background:rgba(255,255,255,.92);}
       <div><div class="fp-price" id="fp-price">—</div><div class="fp-price-sub" id="fp-price-sub"></div></div>
       <button class="fp-buy" id="fp-buy" onclick="fpBuy()">GET LICENSE</button>
     </div>
+    <button class="fp-cartbtn" onclick="addToCart(cur&&cur.id,event)">Add to cart</button>
   </div>
 </div>
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="nav-item on" id="ni-home" onclick="navTo('home')">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Home
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+    Browse
   </div>
   <div class="nav-item" id="ni-search" onclick="navTo('search')">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     Search
   </div>
-  <div class="nav-upload" id="nav-upload-btn" onclick="producerOnly('upload')">
+  <div class="nav-upload" id="nav-upload-btn" style="display:none" onclick="producerOnly('upload')">
     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </div>
-  <div class="nav-item" id="ni-profile" onclick="gated('profile')">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Profile
+  <div class="nav-item" id="ni-cart" onclick="openCart()">
+    <svg viewBox="0 0 24 24"><path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>
+    Cart
+  </div>
+  <div class="nav-item" id="ni-menu" onclick="navTo('menu')">
+    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    Menu
   </div>
 </div>
 
@@ -2283,7 +2370,7 @@ function renderBeatCards(list){
     const d=document.createElement('div');
     d.className='beat-card';d.style.animationDelay=(i*.06)+'s';
     const badge = b.exclPrice ? '<div class="bc-badge">Premium</div>' : (i===0 ? '<div class="bc-badge">New</div>' : '');
-    d.innerHTML='<div class="bc-art">'+coverImg(b)+badge+(b.humanVerified?'<div class="bc-ver">✓ Human-Made</div>':'')+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(24)+'</div>')+'<div class="bc-play-over">▶</div></div>'
+    d.innerHTML='<div class="bc-art">'+coverImg(b)+badge+(b.humanVerified?'<div class="bc-ver">✓ Human-Made</div>':'')+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(24)+'</div>')+'<div class="bc-play-over">▶</div><button class="bc-cart" onclick="addToCart(\''+(b.id||'')+'\',event)" aria-label="Add to cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h7.7a2 2 0 002-1.5L21 8H6"/></svg></button></div>'
       +'<div class="bc-title">'+escapeHtml(b.title)+'</div><div class="bc-prod">prod. <span class="prod-link" data-uid="'+escapeHtml(b.producerId||'')+'" data-name="'+escapeHtml(b.prod)+'" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">'+escapeHtml(b.prod)+'</span> · '+(b.plays||0)+' plays</div>'
       +'<div class="bc-tiers"><div>MP3<b>'+formatKlavePrice(b.price)+'</b></div>'+(b.exclPrice?'<div class="excl">EXCL<b>'+formatKlavePrice(b.exclPrice)+'</b></div>':'')+'</div>';
     d.onclick=()=>playBeat(b.id||i);
@@ -2324,7 +2411,7 @@ function renderHome(){
     const actionBtn = isMine
       ? '<button class="report-btn" title="Delete" onclick="deleteBeat(\''+(b.id||'')+'\',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>'
       : '<button class="report-btn" data-title="'+escapeHtml(b.title)+'" onclick="openReport(this.dataset.title,event)" title="Report"><svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button>';
-    r.innerHTML='<div class="bl-num">'+String(i+1).padStart(2,'0')+'</div><div class="bl-art">'+coverImg(b)+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>')+'</div><div class="bl-info"><div class="bl-title">'+escapeHtml(b.title)+exclTag+'</div><div class="bl-prod">prod. <span class="prod-link" data-uid="'+escapeHtml(b.producerId||'')+'" data-name="'+escapeHtml(b.prod)+'" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">'+escapeHtml(b.prod)+'</span> • '+escapeHtml(b.genre)+'</div></div><div class="bl-price">'+formatKlavePrice(b.price)+'</div><button class="bl-buy" onclick="doBuy(\''+(b.id||i)+'\',event)">BUY</button>'+actionBtn;
+    r.innerHTML='<div class="bl-num">'+String(i+1).padStart(2,'0')+'</div><div class="bl-art">'+coverImg(b)+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>')+'</div><div class="bl-info"><div class="bl-title">'+escapeHtml(b.title)+exclTag+'</div><div class="bl-prod">prod. <span class="prod-link" data-uid="'+escapeHtml(b.producerId||'')+'" data-name="'+escapeHtml(b.prod)+'" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">'+escapeHtml(b.prod)+'</span> • '+escapeHtml(b.genre)+'</div></div><div class="bl-price">'+formatKlavePrice(b.price)+'</div><button class="bl-cartbtn" onclick="addToCart(\''+(b.id||'')+'\',event)" aria-label="Add to cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h7.7a2 2 0 002-1.5L21 8H6"/></svg></button><button class="bl-buy" onclick="doBuy(\''+(b.id||i)+'\',event)">BUY</button>'+actionBtn;
     r.addEventListener('click',e=>{ if(e.target.classList.contains('bl-buy')) return; playBeat(b.id||i); });
     bl.appendChild(r);
   });
@@ -2345,7 +2432,7 @@ function renderSearch(list){
     const actionBtn = isMine
       ? `<button class="report-btn" title="Delete" onclick="deleteBeat('${b.id||''}',event)"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>`
       : '';
-    r.innerHTML=`<div class="bl-num">${String(i+1).padStart(2,'0')}</div><div class="bl-art">${coverImg(b)}${b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>'}</div><div class="bl-info"><div class="bl-title">${escapeHtml(b.title)}${exclTag}</div><div class="bl-prod">prod. <span class="prod-link" data-uid="${escapeHtml(b.producerId||'')}" data-name="${escapeHtml(b.prod)}" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">${escapeHtml(b.prod)}</span> • ${escapeHtml(b.genre)}</div></div><div class="bl-price">${formatKlavePrice(b.price)}</div><button class="bl-buy" onclick="doBuy('${b.id||i}',event)">BUY</button>${actionBtn}`;
+    r.innerHTML=`<div class="bl-num">${String(i+1).padStart(2,'0')}</div><div class="bl-art">${coverImg(b)}${b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>'}</div><div class="bl-info"><div class="bl-title">${escapeHtml(b.title)}${exclTag}</div><div class="bl-prod">prod. <span class="prod-link" data-uid="${escapeHtml(b.producerId||'')}" data-name="${escapeHtml(b.prod)}" onclick="viewProducer(this.dataset.uid,this.dataset.name,event)">${escapeHtml(b.prod)}</span> • ${escapeHtml(b.genre)}</div></div><div class="bl-price">${formatKlavePrice(b.price)}</div><button class="bl-cartbtn" onclick="addToCart('${b.id||''}',event)" aria-label="Add to cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h7.7a2 2 0 002-1.5L21 8H6"/></svg></button><button class="bl-buy" onclick="doBuy('${b.id||i}',event)">BUY</button>${actionBtn}`;
     r.addEventListener('click',e=>{ if(e.target.classList.contains('bl-buy')) return; playBeat(b.id||i); });
     sr.appendChild(r);
   });
@@ -3463,7 +3550,8 @@ async function publishBeat(){
   if(!audioFile){toast('Select an audio file');return;}
   if(!_isWavName(audioFile.name)){toast('WAV files only. Export your beat as .wav');return;}
   const stemsLink=((document.getElementById('up-stems')||{}).value||'').trim();
-  if(stemsLink && !/^https:\/\/\S+$/i.test(stemsLink)){toast('Stems link must start with https://');return;}
+  if(!stemsLink){toast('Add a link to your stems (required)');return;}
+  if(!/^https:\/\/\S+$/i.test(stemsLink)){toast('Stems link must start with https://');return;}
   const priceNum=Number(price);
   const exclNum=excl?Number(excl):0;
   if(!Number.isFinite(priceNum)||priceNum<0){toast('Enter a valid price');return;}
@@ -4621,7 +4709,7 @@ function renderProducerBeats(list){
     const r=document.createElement('div');
     r.className='bl-row';r.style.animationDelay=(i*.04)+'s';
     const exclTag=(b.exclPrice?'<span class="bl-excl-tag">Excl</span>':'')+(b.humanVerified?'<span class="bl-ver-tag">✓ Human</span>':'');
-    r.innerHTML='<div class="bl-num">'+String(i+1).padStart(2,'0')+'</div><div class="bl-art">'+coverImg(b)+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>')+'</div><div class="bl-info"><div class="bl-title">'+escapeHtml(b.title)+exclTag+'</div><div class="bl-prod">'+escapeHtml(b.genre)+'</div></div><div class="bl-price">'+formatKlavePrice(b.price)+'</div><button class="bl-buy" onclick="doBuy(\''+(b.id||i)+'\',event)">BUY</button>';
+    r.innerHTML='<div class="bl-num">'+String(i+1).padStart(2,'0')+'</div><div class="bl-art">'+coverImg(b)+(b.coverUrl?'':'<div class="bc-wave">'+makeWaveBars(12)+'</div>')+'</div><div class="bl-info"><div class="bl-title">'+escapeHtml(b.title)+exclTag+'</div><div class="bl-prod">'+escapeHtml(b.genre)+'</div></div><div class="bl-price">'+formatKlavePrice(b.price)+'</div><button class="bl-cartbtn" onclick="addToCart(\''+(b.id||'')+'\',event)" aria-label="Add to cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a2 2 0 002 1.6h7.7a2 2 0 002-1.5L21 8H6"/></svg></button><button class="bl-buy" onclick="doBuy(\''+(b.id||i)+'\',event)">BUY</button>';
     r.addEventListener('click',e=>{ if(e.target.classList.contains('bl-buy')) return; playBeat(b.id||i); });
     wrap.appendChild(r);
   });
@@ -5280,6 +5368,122 @@ function adminLogoTap(){
     var el=document.getElementById(t==='producers'?'producers-strip':'cards-scroll');
     if(el) setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'center'});},60);
   };
+})();
+</script>
+
+<script>
+/* ═══ CART + MENU ═══ */
+function cartGet(){ try{ const c=JSON.parse(localStorage.getItem('klave-cart')||'[]'); return Array.isArray(c)?c:[]; }catch(e){ return []; } }
+function cartSave(c){ try{ localStorage.setItem('klave-cart',JSON.stringify(c)); }catch(e){} cartBadge(); }
+function cartBadge(){
+  const n=cartGet().length, b=document.getElementById('cart-badge'), m=document.getElementById('mn-count');
+  if(b){ b.textContent=n; b.style.display=n?'flex':'none'; }
+  if(m) m.textContent=n?('('+n+')'):'';
+}
+function cartBeat(id){ return (typeof getBeats==='function'?getBeats():[]).find(function(x){ return x.id===id; }); }
+function addToCart(id,e){
+  if(e){ e.stopPropagation(); if(e.preventDefault) e.preventDefault(); }
+  const b=id?cartBeat(id):null;
+  if(!b){ toast('This beat is no longer available'); return; }
+  if(b.soldExclusive){ toast('This beat was sold exclusively'); return; }
+  const c=cartGet();
+  if(c.some(function(x){ return x.id===b.id; })){ toast('Already in your cart'); return; }
+  if(c.length>=10){ toast('Cart is full (10 beats max)'); return; }
+  c.push({id:b.id,tier:'standard'}); cartSave(c); toast('Added to cart');
+}
+function cartRemove(id){ cartSave(cartGet().filter(function(x){ return x.id!==id; })); renderCart(); }
+function cartSetTier(id,tier){ const c=cartGet(); c.forEach(function(x){ if(x.id===id) x.tier=tier; }); cartSave(c); renderCart(); }
+function cartLines(){
+  const lines=[], keep=[];
+  cartGet().forEach(function(x){
+    const b=cartBeat(x.id); if(!b||b.soldExclusive) return;
+    const tier=(x.tier==='exclusive'&&b.exclPrice)?'exclusive':'standard';
+    keep.push({id:x.id,tier:tier});
+    lines.push({b:b,tier:tier,usd:tier==='exclusive'?b.exclPrice:b.price});
+  });
+  return {lines:lines,keep:keep};
+}
+function openCart(){ navTo('cart'); renderCart(); }
+function renderCart(){
+  const list=document.getElementById('cart-list'), sum=document.getElementById('cart-summary');
+  if(!list) return;
+  document.getElementById('cart-done').innerHTML='';
+  const r=cartLines();
+  if(r.keep.length!==cartGet().length) cartSave(r.keep);
+  if(!r.lines.length){ list.innerHTML='<div class="cart-empty">Your cart is empty.<br>Tap the cart icon on any beat to add it.</div>'; sum.innerHTML=''; return; }
+  list.innerHTML=r.lines.map(function(l){
+    const b=l.b, art=b.coverUrl?'<img src="'+escapeHtml(b.coverUrl)+'" alt=""/>':escapeHtml((b.title||'?')[0]);
+    const id=escapeHtml(b.id);
+    return '<div class="cart-item"><div class="cart-art">'+art+'</div><div class="cart-info"><div class="cart-title">'+escapeHtml(b.title)+'</div><div class="cart-prod">prod. '+escapeHtml(b.prod||'')+'</div>'
+      +'<div class="cart-tiers"><button class="cart-tier'+(l.tier==='standard'?' on':'')+'" onclick="cartSetTier(\''+id+'\',\'standard\')">Standard</button>'
+      +(b.exclPrice?'<button class="cart-tier'+(l.tier==='exclusive'?' on':'')+'" onclick="cartSetTier(\''+id+'\',\'exclusive\')">Exclusive</button>':'')+'</div></div>'
+      +'<div class="cart-side"><div class="cart-price">'+formatKlavePrice(l.usd)+'</div><button class="cart-rm" onclick="cartRemove(\''+id+'\')">Remove</button></div></div>';
+  }).join('');
+  const total=r.lines.reduce(function(a,l){ return a+l.usd; },0);
+  sum.innerHTML='<div class="cart-total"><span>Total</span><span>'+formatKlavePrice(Math.round(total*100)/100)+'</span></div>'
+    +'<button class="cart-pay" id="cart-pay" onclick="cartCheckout()">Pay with Paystack</button>'
+    +'<div class="cart-note">One payment for every beat in your cart. Download links appear here and are emailed to you.</div>';
+}
+async function cartCheckout(){
+  if(!window._currentUser){ gated(); return; }
+  if(isAdmin()){ toast('Admin — purchase bypassed ✓'); return; }
+  const u=window._currentUser;
+  if(!u.emailVerified && !(u.providerData||[]).some(function(p){ return p.providerId==='google.com'; })){ toast('Verify your email first to buy a beat'); return; }
+  const r=cartLines(); if(!r.lines.length){ toast('Your cart is empty'); return; }
+  const email=u.email||''; if(!email.includes('@')){ toast('Your account has no email'); return; }
+  const btn=document.getElementById('cart-pay'); btn.disabled=true; btn.textContent='Loading…';
+  let rate; try{ rate=await getUsdToNgnRate(); }catch(e){ toast('Could not load exchange rate. Try again.'); btn.disabled=false; btn.textContent='Pay with Paystack'; return; }
+  const totalUsd=r.lines.reduce(function(a,l){ return a+l.usd; },0);
+  const handler=PaystackPop.setup({
+    key:PAYSTACK_PUBLIC_KEY, email:email, amount:Math.round(totalUsd*rate*100), currency:'NGN',
+    metadata:{ items:r.lines.map(function(l){ return {beatId:l.b.id,tier:l.tier}; }), buyerId:u.uid, email:email },
+    callback:function(resp){ verifyCartPayment(resp.reference); },
+    onClose:function(){ btn.disabled=false; btn.textContent='Pay with Paystack'; }
+  });
+  handler.openIframe();
+}
+async function verifyCartPayment(reference){
+  const btn=document.getElementById('cart-pay'); if(btn) btn.textContent='Verifying payment…';
+  try{
+    const h={'Content-Type':'application/json'};
+    try{ if(window._currentUser) h.Authorization='Bearer '+await window._currentUser.getIdToken(); }catch(e){}
+    const res=await fetch('/api/verify-payment',{method:'POST',headers:h,body:JSON.stringify({reference:reference})});
+    const data=await res.json();
+    if(res.ok && data.success){
+      cartSave([]);
+      document.getElementById('cart-list').innerHTML=''; document.getElementById('cart-summary').innerHTML='';
+      document.getElementById('cart-done').innerHTML='<div class="cart-item" style="flex-direction:column;align-items:stretch;"><div class="cart-title" style="font-size:18px;">Purchased ✓</div><div class="cart-prod">Payment confirmed. Links are also emailed to you.</div>'
+        +(data.items||[]).map(function(it){ return '<div style="margin-top:12px;"><div class="cart-title">'+escapeHtml(it.title||'Beat')+'</div>'+(it.audioUrl?'<a class="cart-dl" href="'+escapeHtml(it.audioUrl)+'" target="_blank" rel="noopener" download>Download</a>':'')+'</div>'; }).join('')+'</div>';
+      if(window.track) window.track('purchase',{transaction_id:data.reference||'',value:Number(data.amountPaidNaira)||0,currency:'NGN',tier:'cart'});
+    } else {
+      toast('Payment could not be verified: '+(data.error||'unknown error'));
+      if(btn){ btn.disabled=false; btn.textContent='Pay with Paystack'; }
+    }
+  }catch(e){
+    console.error(e); toast('Something went wrong verifying your payment. Contact support with reference: '+reference);
+    if(btn){ btn.disabled=false; btn.textContent='Pay with Paystack'; }
+  }
+}
+function renderMenu(){
+  cartBadge();
+  const u=window._currentUser, nm=document.getElementById('mn-name'), tr=document.getElementById('mn-tier'), av=document.getElementById('mn-av');
+  if(!nm) return;
+  if(!u){ nm.textContent='Welcome'; tr.textContent='Log in to buy and sell beats'; av.textContent='?'; return; }
+  nm.textContent=u.displayName||(u.email||'').split('@')[0]||'Account';
+  const t=window._myTier||'free'; tr.textContent=({free:'Free',pro15:'Pro',pro7:'Pro',pro25:'Pro+'})[t]||t;
+  if(u.photoURL) av.innerHTML='<img src="'+escapeHtml(u.photoURL)+'" alt=""/>'; else av.textContent=(nm.textContent[0]||'?').toUpperCase();
+}
+(function(){
+  cartBadge();
+  setInterval(function(){ document.body.classList.toggle('signed-in',!!window._currentUser); },400);
+  var _n2=window.navTo;
+  if(typeof _n2==='function'){
+    window.navTo=function(n){
+      var r=_n2.apply(this,arguments);
+      if(n==='menu') renderMenu();
+      return r;
+    };
+  }
 })();
 </script>
 </body>

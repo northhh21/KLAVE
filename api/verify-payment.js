@@ -145,7 +145,55 @@ async function sendDownloadEmail({ toEmail, beat, tier, reference }) {
   });
 }
 
+// ── Link previews: /beat/<id> is rewritten here (GET ?og=1&id=...) so shared links
+// show the beat's title and cover. Lives in this file to stay within 12 functions.
+const _esc = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+async function serveBeatPage(req, res) {
+  const id = String(req.query.id || '').replace(/[^A-Za-z0-9_-]/g, '');
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const origin = 'https://' + host;
+  let html;
+  try {
+    html = await (await fetch(origin + '/index.html')).text();
+  } catch (e) {
+    res.statusCode = 302; res.setHeader('Location', '/'); return res.end();
+  }
+  let title = 'KLAVE', desc = 'Verified human-made beats. License them on KLAVE.', img = '';
+  try {
+    if (id) {
+      const snap = await db.collection('beats').doc(id).get();
+      if (snap.exists) {
+        const b = snap.data();
+        title = `${b.title}${b.prod ? ' — prod. ' + b.prod : ''} | KLAVE`;
+        const bits = [b.genre, b.bpm ? b.bpm + ' BPM' : '', b.key].filter(Boolean);
+        desc = `${b.humanVerified ? 'Verified human-made. ' : ''}${bits.length ? bits.join(' · ') + '. ' : ''}Preview and license on KLAVE.`;
+        img = b.coverUrl || '';
+      }
+    }
+  } catch (e) { /* generic tags */ }
+  const tags =
+    '<meta property="og:type" content="website"/>' +
+    '<meta property="og:site_name" content="KLAVE"/>' +
+    `<meta property="og:title" content="${_esc(title)}"/>` +
+    `<meta property="og:description" content="${_esc(desc)}"/>` +
+    `<meta property="og:url" content="${_esc(origin + '/beat/' + id)}"/>` +
+    (img ? `<meta property="og:image" content="${_esc(img)}"/>` : '') +
+    `<meta name="twitter:card" content="${img ? 'summary_large_image' : 'summary'}"/>` +
+    `<meta name="twitter:title" content="${_esc(title)}"/>` +
+    `<meta name="twitter:description" content="${_esc(desc)}"/>` +
+    (img ? `<meta name="twitter:image" content="${_esc(img)}"/>` : '');
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${_esc(title)}</title>`).replace('</head>', tags + '</head>');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  return res.status(200).send(html);
+}
+
 export default async function handler(req, res) {
+  if (req.method === 'GET' && req.query && req.query.og === '1') {
+    return serveBeatPage(req, res);
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
